@@ -37,8 +37,8 @@ public class GameManager : MonoBehaviour
     {
         for (int i = 0; i < 9; i++)
         {
-            Cell cell = board.GetCell(i);
-            cellState[i] = cell.CellState();
+            //Cell cell = board.GetCell(i);
+            //cellState[i] = cell.CellState();
         }
     }
 }

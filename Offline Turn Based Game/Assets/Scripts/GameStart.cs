@@ -8,17 +8,17 @@ public class GameStart : MonoBehaviour
     Player player1;
     Player player2;
 
-    GameBoard gameBoard;
+    ScreenManager screenManager;
 
     private void Awake()
     {
-       
+      screenManager = FindObjectOfType<ScreenManager>();
     }
 
     void Start()
     {
         gameManager = FindObjectOfType<GameManager>();
-        gameBoard = FindObjectOfType<GameBoard>();
+        
         player1 = gameManager.GetPlayers(0);
         player2 = gameManager.GetPlayers(1);
     }
@@ -32,9 +32,8 @@ public class GameStart : MonoBehaviour
         player1.SetText();
         player2.SetText();
 
-        gameBoard.SetActive(true);
         gameManager.UpdateCellState();
-        this.gameObject.SetActive(false);
+        screenManager.UpdateScreenState();
     }
 
     public void ChooseO()
@@ -45,8 +44,7 @@ public class GameStart : MonoBehaviour
         player1.SetText();
         player2.SetText();
 
-        gameBoard.SetActive(true);
         gameManager.UpdateCellState();
-        this.gameObject.SetActive(false);
+        screenManager.UpdateScreenState();
     }
 }
