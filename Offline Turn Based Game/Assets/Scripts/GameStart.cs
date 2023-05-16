@@ -32,7 +32,7 @@ public class GameStart : MonoBehaviour
         player1.SetText();
         player2.SetText();
 
-        gameManager.UpdateCellState();
+        //gameManager.UpdateCellState();
         screenManager.UpdateScreenState();
     }
 
@@ -44,7 +44,7 @@ public class GameStart : MonoBehaviour
         player1.SetText();
         player2.SetText();
 
-        gameManager.UpdateCellState();
+        //gameManager.UpdateCellState();
         screenManager.UpdateScreenState();
     }
 }
