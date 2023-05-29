@@ -10,7 +10,9 @@ public class hi : MonoBehaviour
 
     bool isP1 = true;
 
-    public TMP_Text text;
+    public TMP_Text turnText;
+    public TMP_Text sum2Text;
+    public TMP_Text sum1Text;
 
     // Start is called before the first frame update
     void Start()
@@ -51,8 +53,11 @@ public class hi : MonoBehaviour
         }
 
         if (isP1)
-            text.text = "Player 1 Turn";
+            turnText.text = "Player 1 Turn";
         else
-            text.text = "Player 2 Turn";
+            turnText.text = "Player 2 Turn";
+
+        sum1Text.text = cards.GetP1Sum().ToString();
+        sum2Text.text = cards.GetP2Sum().ToString();
     }
 }
