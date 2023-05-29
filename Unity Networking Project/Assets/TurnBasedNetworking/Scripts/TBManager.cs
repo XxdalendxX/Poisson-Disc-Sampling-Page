@@ -10,6 +10,38 @@ namespace TurnBasedSystem
     /// </summary>
     public class TBManager : NetworkManager
     {
-        
+        List<TBPlayer> TB_players;
+        int TB_turnNo = 0;
+
+        [Server]
+        public void TB_StartGame()
+        {
+            if (TB_turnNo != 0)
+                TB_turnNo = 0;
+            TB_players[TB_turnNo].RpcTB_ToggleTurn();
+        }
+
+        [Server]
+        public void TB_EndTurn()
+        {
+            TB_players[TB_turnNo].RpcTB_ToggleTurn();
+        }
+
+        [Server]
+        public void TB_NextTurn()
+        {
+            TB_turnNo++;
+            if (TB_turnNo == TB_players.Count)
+            {
+                TB_turnNo = 0;
+            }
+            TB_players[TB_turnNo].RpcTB_ToggleTurn();
+        }
+
+        [Server]
+        public void TB_GameEnd(TBPlayer player)
+        {
+            player.RpcTB_PlayerWon();
+        }
     }
 }
