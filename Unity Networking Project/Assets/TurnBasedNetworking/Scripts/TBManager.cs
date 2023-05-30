@@ -8,7 +8,7 @@ namespace TurnBasedSystem
     /// <summary>
     /// This would carry nessesary information for the management of the network system.
     /// </summary>
-    public class TBManager : NetworkManager
+    public class TBManager : NetworkBehaviour
     {
         List<TBPlayer> TB_players;
         int TB_turnNo = 0;
@@ -42,6 +42,14 @@ namespace TurnBasedSystem
         public void TB_GameEnd(TBPlayer player)
         {
             player.RpcTB_PlayerWon();
+        }
+
+        public int TB_GetPlayerTurn()
+        {
+            if (TB_players == null)
+                return 0;
+            else
+                return TB_turnNo + 1;
         }
     }
 }

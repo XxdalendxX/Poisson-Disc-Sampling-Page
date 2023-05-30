@@ -63,16 +63,7 @@ public class PlayingCards : NetworkBehaviour
         int P1Count = player1Cards.Count;
         int P2Count = player2Cards.Count;
 
-        for (int i = 0; i < player1Cards.Count; i++)
-        {
-            cardPool[i] = player1Cards[i];
-            player1Cards.RemoveAt(i);
-        }
-
-        for (int i = 1; i < player2Cards.Count; i++)
-        {
-            cardPool[i] = player2Cards[i];
-            player2Cards.RemoveAt(i);
-        }
+        player1Cards.RemoveRange(0, P1Count);
+        player2Cards.RemoveRange(0, P2Count);
     }
 }
