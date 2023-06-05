@@ -7,8 +7,6 @@ using Mirror;
 
 public class PlayingCards : NetworkBehaviour
 {
-    public GameObject cardPrefab;
-
     public int[] cardPool = new int[11];
 
     public List<int> player1Cards;

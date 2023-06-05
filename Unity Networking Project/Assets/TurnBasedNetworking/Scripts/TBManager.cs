@@ -14,21 +14,23 @@ namespace TurnBasedSystem
         int TB_turnNo = 0;
 
         [Server]
-        public void TB_StartGame()
+        public virtual void TB_StartGame()
         {
             if (TB_turnNo != 0)
                 TB_turnNo = 0;
+            if (TB_players == null)
+                return;
             TB_players[TB_turnNo].RpcTB_ToggleTurn();
         }
 
         [Server]
-        public void TB_EndTurn()
+        public virtual void TB_EndTurn(TBPlayer player)
         {
             TB_players[TB_turnNo].RpcTB_ToggleTurn();
         }
 
         [Server]
-        public void TB_NextTurn()
+        public virtual void TB_NextTurn(TBPlayer player)
         {
             TB_turnNo++;
             if (TB_turnNo == TB_players.Count)
@@ -39,7 +41,7 @@ namespace TurnBasedSystem
         }
 
         [Server]
-        public void TB_GameEnd(TBPlayer player)
+        public virtual void TB_GameEnd(TBPlayer player)
         {
             player.RpcTB_PlayerWon();
         }
@@ -51,5 +53,7 @@ namespace TurnBasedSystem
             else
                 return TB_turnNo + 1;
         }
+
+
     }
 }

@@ -6,9 +6,6 @@ using UnityEngine;
 
 public class Display : MonoBehaviour
 {
-    [SerializeField]
-    GameManager manager;
-
     public TMP_Text turnText;
     public TMP_Text sum1Text;
     public TMP_Text sum2Text;
@@ -16,16 +13,25 @@ public class Display : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-          
-         
-        if (Input.GetKeyDown(KeyCode.LeftShift))
-        {
-            manager.cards.ResetCards();
-        }
         
-       turnText.text = "Player " + manager.TB_GetPlayerTurn() + " Turn!";
+    }
 
-        sum1Text.text = manager.cards.GetP1Sum().ToString();
-        sum2Text.text = manager.cards.GetP2Sum().ToString();
+    public void StartGame()
+    {
+    }
+
+    public void ChangeTurnText(int playerNo)
+    {
+        turnText.text = "Player " + playerNo + "'s Turn!";
+    }
+
+    public void ChangePlayer1SumText(int sum)
+    {
+        turnText.text = "Player " + sum + "'s Turn!";
+    }
+
+    public void ChangePlayer2SumText(int sum)
+    {
+        turnText.text = "Player " + sum + "'s Turn!";
     }
 }

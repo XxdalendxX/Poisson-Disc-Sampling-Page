@@ -37,5 +37,12 @@ namespace TurnBasedSystem
             TB_wins++;
         }
 
+        public override void OnStartServer()
+        {
+            base.OnStartServer();
+
+            Debug.Log("Client connected to the server");
+        }
+
     }
 }
