@@ -12,13 +12,17 @@ public class GameManager : TBManager
     [HideInInspector]
     public Display display;
 
+
+
+    bool ongoingGame = false;
+
     public override void OnStartClient()
     {
         base.OnStartClient();
 
         cards = GetComponent<PlayingCards>();
         display = GetComponent<Display>();
-        TB_StartGame();
+        
     }
 
     public override void OnStartServer()
@@ -27,7 +31,7 @@ public class GameManager : TBManager
 
         cards = GetComponent<PlayingCards>();
         display = GetComponent<Display>();
-        TB_StartGame();
+        
     }
 
     public override void TB_StartGame()
@@ -41,6 +45,19 @@ public class GameManager : TBManager
 
     private void Update()
     {
+        if (!ongoingGame && TB_players.Count >= 2)
+        {
+            TB_StartGame();
+            ongoingGame = true;
+            display.gameObject.SetActive(true);
+            Debug.Log("AHHHHHHHH anyways...");
+        }
+        else if (ongoingGame && TB_players.Count < 2)
+        {
+            ongoingGame = false;
+            display.gameObject.SetActive(false);
+        }
+        
         if (Input.GetKeyDown(KeyCode.LeftShift))
         {
             cards.ResetCards();

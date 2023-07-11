@@ -66,6 +66,8 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
+  TB_Manager: {fileID: 0}
+  TB_ManagerLocation: GameManager
 --- !u!1 &6483301739525302141
 GameObject:
   m_ObjectHideFlags: 0

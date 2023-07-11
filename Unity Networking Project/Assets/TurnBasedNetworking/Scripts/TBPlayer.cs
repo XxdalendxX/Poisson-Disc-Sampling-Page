@@ -12,6 +12,9 @@ namespace TurnBasedSystem
     /// </summary>
     public class TBPlayer : NetworkBehaviour
     {
+        [SerializeField] TBManager TB_Manager;
+        [SerializeField] string TB_ManagerLocation;
+        
         bool TB_isTurn = false;
         int TB_wins = 0;
 
@@ -37,12 +40,28 @@ namespace TurnBasedSystem
             TB_wins++;
         }
 
-        public override void OnStartServer()
+        public override void OnStartClient()
         {
             base.OnStartServer();
+
+            TB_Manager = GameObject.Find(TB_ManagerLocation).GetComponent<TBManager>();
+
+            TB_Manager.RpcInsertPlayer(this);
 
             Debug.Log("Client connected to the server");
         }
 
+        public override void OnStopClient()
+        {
+            TB_Manager.RpcRemovePlayer(this);
+
+            //NetworkServer.Destroy(this.gameObject);
+
+            //TB_Manager.ClearPlayerList();
+            
+            base.OnStartServer();
+
+            Debug.Log("Client has left the server");
+        }
     }
 }

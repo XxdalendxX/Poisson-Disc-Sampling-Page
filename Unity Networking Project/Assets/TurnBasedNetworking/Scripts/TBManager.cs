@@ -10,7 +10,7 @@ namespace TurnBasedSystem
     /// </summary>
     public class TBManager : NetworkBehaviour
     {
-        List<TBPlayer> TB_players;
+        [SerializeField, SyncVar] protected List<TBPlayer> TB_players;
         int TB_turnNo = 0;
 
         [Server]
@@ -54,6 +54,22 @@ namespace TurnBasedSystem
                 return TB_turnNo + 1;
         }
 
+        [ClientRpc]
+        public void RpcInsertPlayer(TBPlayer player)
+        {
+            TB_players.Add(player);
+        }
 
+        [ClientRpc]
+        public void RpcRemovePlayer(TBPlayer player)
+        {
+            TB_players.Remove(player);
+            Debug.Log("Removing Client from player list");
+        }
+
+        public void ClearPlayerList()
+        {
+            TB_players.RemoveRange(0, TB_players.Count);
+        }
     }
 }
