@@ -50,7 +50,7 @@ public class GameManager : TBManager
             TB_StartGame();
             ongoingGame = true;
             display.gameObject.SetActive(true);
-            Debug.Log("AHHHHHHHH anyways...");
+            Debug.Log("Starting game");
         }
         else if (ongoingGame && TB_players.Count < 2)
         {

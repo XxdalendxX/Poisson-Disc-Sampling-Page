@@ -42,7 +42,7 @@ namespace TurnBasedSystem
 
         public override void OnStartClient()
         {
-            base.OnStartServer();
+            base.OnStartClient();
 
             TB_Manager = GameObject.Find(TB_ManagerLocation).GetComponent<TBManager>();
 
@@ -59,7 +59,7 @@ namespace TurnBasedSystem
 
             //TB_Manager.ClearPlayerList();
             
-            base.OnStartServer();
+            base.OnStopClient();
 
             Debug.Log("Client has left the server");
         }
