@@ -20,5 +20,10 @@ public class CustomInspector : Editor
         {
             pda.Execute();
         }
+
+        if (GUILayout.Button("Clear All Objects"))
+        {
+            pda.ClearLists();
+        }
     }
 }
