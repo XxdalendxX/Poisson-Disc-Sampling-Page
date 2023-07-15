@@ -21,28 +21,20 @@ public class PoissonDiscAllignment : MonoBehaviour
 
     [Space]
     [SerializeField] int attempts = 5;
-
-    [Space]
-    [SerializeField] bool mustStop = false;
-    [SerializeField] bool oneTime = false;
-    [SerializeField] int maxIterations = 1;
     
     [Space]
-    [SerializeField] List<GameObject> openList = new List<GameObject>();
-    [SerializeField] List<GameObject> closedList = new List<GameObject>();
     [SerializeField] List<GameObject> allObjects = new List<GameObject>();
 
     public void Execute()
     {
         epicenter = this.gameObject;
         layerMask = LayerMask.GetMask(LayerMask.LayerToName(layerNumber));
-        StartCoroutine(Perform());
+        //StartCoroutine(CoroutinePerform());
+        Perform();
     }
 
     public void ClearLists()
     {
-        openList.Clear();
-        closedList.Clear();
         int obj = allObjects.Count;
         for (int i = 0; i < obj - 1; i++)
         {
@@ -52,14 +44,18 @@ public class PoissonDiscAllignment : MonoBehaviour
         allObjects.RemoveAt(0);
     }
 
-    IEnumerator Perform()
+    IEnumerator CoroutinePerform()
     {
         float y = epicenter.transform.position.y;
         int iterations = 0;
-        
-        openList.Add(epicenter);
+        List<Vector3> openList = new List<Vector3>();
+        List<Vector3> closedList = new List<Vector3>();
+
+        openList.Add(epicenter.transform.position);
         allObjects.Add(epicenter);
-        
+
+        bool mustStop = false;
+
         while(!mustStop)
         {
             if (openList.Count < 1)
@@ -67,18 +63,20 @@ public class PoissonDiscAllignment : MonoBehaviour
                 mustStop = true;
                 break;
             }
-            GameObject currentObject = openList[0];
+            Vector3 currentObjectPos = openList[0];
 
             int fails = 0;
             while (iterations <= attempts)
             {
                 
-                Vector3 position = FindLocation(y, currentObject.transform);
+                Vector3 position = FindLocation(y, currentObjectPos);
                 Collider[] colliders = Physics.OverlapSphere(position, objectRadius, layerMask , QueryTriggerInteraction.Collide);
                 if(colliders.Length == 0 && CheckPosInBorder(position) == true)
                 {
                     GameObject spawnedObject = SpawnObject(desiredPrefab, position, Quaternion.identity);
-                    openList.Add(spawnedObject);
+                    SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
+                    sCollider.radius = objectRadius;
+                    openList.Add(spawnedObject.transform.position);
                     allObjects.Add(spawnedObject);
                     iterations = 0;
                 }
@@ -92,12 +90,63 @@ public class PoissonDiscAllignment : MonoBehaviour
             iterations = 0;
             fails = 0;
             openList.RemoveAt(0);
-            closedList.Add(currentObject);
-            yield return new WaitForSeconds(0.01f);
+            closedList.Add(currentObjectPos);
+            yield return null;
+            //yield return new WaitForSeconds(0.01f);
         }
         Debug.Log("PDS complete");
-        mustStop = false;
         yield return null;
+    }
+
+    void Perform()
+    {
+        float y = epicenter.transform.position.y;
+        int iterations = 0;
+        List<Vector3> openList = new List<Vector3>();
+        List<Vector3> closedList = new List<Vector3>();
+
+        openList.Add(epicenter.transform.position);
+        allObjects.Add(epicenter);
+
+        bool mustStop = false;
+
+        while (!mustStop)
+        {
+            if (openList.Count < 1)
+            {
+                mustStop = true;
+                break;
+            }
+            Vector3 currentObjectPos = openList[0];
+
+            int fails = 0;
+            while (iterations <= attempts)
+            {
+
+                Vector3 position = FindLocation(y, currentObjectPos);
+                Collider[] colliders = Physics.OverlapSphere(position, objectRadius, layerMask, QueryTriggerInteraction.Collide);
+                if (colliders.Length == 0 && CheckPosInBorder(position) == true)
+                {
+                    GameObject spawnedObject = SpawnObject(desiredPrefab, position, Quaternion.identity);
+                    SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
+                    sCollider.radius = objectRadius;
+                    openList.Add(spawnedObject.transform.position);
+                    allObjects.Add(spawnedObject);
+                    iterations = 0;
+                }
+                if (colliders.Length > 0)
+                {
+                    fails++;
+                    iterations++;
+                }
+            }
+            Debug.Log("Placement test failed: " + fails + ", || Open List count: " + openList.Count + " || Closed List count: " + closedList.Count );
+            iterations = 0;
+            fails = 0;
+            openList.RemoveAt(0);
+            closedList.Add(currentObjectPos);
+        }
+        Debug.Log("PDS complete");
     }
 
     public float GetObjectRadius()
@@ -118,14 +167,14 @@ public class PoissonDiscAllignment : MonoBehaviour
         }
     }
 
-    Vector3 FindLocation(float y, Transform objectTransform)
+    Vector3 FindLocation(float y, Vector3 objectTransform)
     {
         float min = objectRadius * 2;
         float max = objectRadius * maxObjectRadiusMultiplier;
         var range = Random.Range(min, max);
         var angle = Random.Range(0, 360);
-        var x = objectTransform.position.x + Mathf.Cos(angle) * range;
-        var z = objectTransform.position.z + Mathf.Sin(angle) * range;
+        var x = objectTransform.x + Mathf.Cos(angle) * range;
+        var z = objectTransform.z + Mathf.Sin(angle) * range;
         return new Vector3(x,y,z);
     }
 
