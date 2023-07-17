@@ -96,7 +96,7 @@ SphereCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 4
+  m_Radius: 2
   m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
 --- !u!114 &4182164491519375922
 MonoBehaviour:
@@ -113,9 +113,12 @@ MonoBehaviour:
   desiredPrefab: {fileID: 6940251933932056484, guid: 86a04f5e7c3b59e4f8ef1febf37f0bda, type: 3}
   layerNumber: 6
   objectRadius: 2
-  borderRadius: 45
   maxObjectRadiusMultiplier: 6
   attempts: 10
-  openList: []
-  closedList: []
   allObjects: []
+  isCore: 1
+  centerPosition: {x: 0, y: 0, z: 0}
+  circleArea: 1
+  borderRadius: 45
+  XDiameter: 0
+  ZDiameter: 0

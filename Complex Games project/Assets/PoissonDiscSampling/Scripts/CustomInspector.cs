@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.ShortcutManagement;
 
 [CustomEditor(typeof(PoissonDiscAllignment))]
 public class CustomInspector : Editor
@@ -38,11 +39,14 @@ public class CustomInspector : Editor
         if (collider != null)
             collider.radius = pda.GetObjectRadius();
 
-        if(GUILayout.Button("Perform Poisson Disc Allignment"))
+        if(pda.ZDiameter != 0 && pda.XDiameter != 0)
         {
-            pda.Execute();
+            
+            if(GUILayout.Button("Perform Poisson Disc Allignment"))
+            {
+                pda.Execute();
+            }
         }
-
         EditorGUILayout.Space();
 
         if (GUILayout.Button("Clear All Objects"))

@@ -399,10 +399,7 @@ public class PoissonDiscAllignment : MonoBehaviour
         {
             return true;
         }
-        else
-        {
-            return false;
-        }
+        return false;
     }
 
     bool CheckPosInQuadBorder(Vector3 position, Vector3 corePos)
@@ -443,6 +440,11 @@ public class PoissonDiscAllignment : MonoBehaviour
     GameObject SpawnObject(GameObject gameObject, Vector3 position, Quaternion rotation)
     {
         return Instantiate(gameObject, position, rotation);
+    }
+
+    public int GetObjectCount()
+    {
+        return allObjects.Count;
     }
     #endregion
 }
