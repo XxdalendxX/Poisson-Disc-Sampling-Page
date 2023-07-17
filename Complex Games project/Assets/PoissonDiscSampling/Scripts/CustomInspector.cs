@@ -39,7 +39,7 @@ public class CustomInspector : Editor
         if (collider != null)
             collider.radius = pda.GetObjectRadius();
 
-        if(pda.ZDiameter != 0 && pda.XDiameter != 0)
+        if(!pda.circleArea && pda.ZDiameter != 0 && pda.XDiameter != 0 && pda.GetObjectCount() < 1)
         {
             
             if(GUILayout.Button("Perform Poisson Disc Allignment"))
@@ -47,11 +47,22 @@ public class CustomInspector : Editor
                 pda.Execute();
             }
         }
+        else if (pda.circleArea && pda.GetObjectCount() < 1)
+        {
+            if (GUILayout.Button("Perform Poisson Disc Allignment"))
+            {
+                pda.Execute();
+            }
+        }
+
         EditorGUILayout.Space();
 
-        if (GUILayout.Button("Clear All Objects"))
+        if (pda.GetObjectCount() > 0)
         {
-            pda.ClearLists();
+            if (GUILayout.Button("Clear All Objects"))
+            {
+                pda.ClearLists();
+            }
         }
     }
 }

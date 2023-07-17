@@ -316,6 +316,7 @@ public class PoissonDiscAllignment : MonoBehaviour
             position.x = Random.Range(centerPosition.x - (XDiameter / 2), centerPosition.x + (XDiameter / 2));
             position.y = y;
             position.z = Random.Range(centerPosition.z - (ZDiameter / 2), centerPosition.z + (ZDiameter / 2));
+            Debug.Log(position);
             Collider[] colliders = Physics.OverlapSphere(position, objectRadius, layerMask, QueryTriggerInteraction.Collide);
             if (CheckPosInCircleBorder(position, centerPosition) == true)
             {
@@ -446,5 +447,47 @@ public class PoissonDiscAllignment : MonoBehaviour
     {
         return allObjects.Count;
     }
+    #endregion
+
+    #region Gizmos
+    void OnDrawGizmos()
+    {
+        if(!circleArea)
+        {
+            if(isCore)
+            {
+                float xDist = (XDiameter / 2);
+                float zDist = (ZDiameter / 2);
+                Vector3 corePos = gameObject.transform.position;
+                Vector3 pointA = new Vector3(corePos.x - xDist, corePos.y, corePos.z - zDist);
+                Vector3 pointB = new Vector3(corePos.x - xDist, corePos.y, corePos.z + zDist);
+                Vector3 pointC = new Vector3(corePos.x + xDist, corePos.y, corePos.z + zDist);
+                Vector3 pointD = new Vector3(corePos.x + xDist, corePos.y, corePos.z - zDist);
+                Gizmos.DrawLine(pointA, pointB);
+                Gizmos.DrawLine(pointB, pointC);
+                Gizmos.DrawLine(pointC, pointD);
+                Gizmos.DrawLine(pointD, pointA);
+            }
+            else
+            {
+                float xDist = (XDiameter / 2);
+                float zDist = (ZDiameter / 2);
+                Vector3 pointA = new Vector3(centerPosition.x - xDist, centerPosition.y, centerPosition.z - zDist);
+                Vector3 pointB = new Vector3(centerPosition.x - xDist, centerPosition.y, centerPosition.z + zDist);
+                Vector3 pointC = new Vector3(centerPosition.x + xDist, centerPosition.y, centerPosition.z + zDist);
+                Vector3 pointD = new Vector3(centerPosition.x + xDist, centerPosition.y, centerPosition.z - zDist);
+                Gizmos.DrawLine(pointA, pointB);
+                Gizmos.DrawLine(pointB, pointC);
+                Gizmos.DrawLine(pointC, pointD);
+                Gizmos.DrawLine(pointD, pointA);
+            }
+        }
+
+        if(circleArea)
+        {
+            
+        }
+    }
+
     #endregion
 }
