@@ -450,7 +450,7 @@ public class PoissonDiscAllignment : MonoBehaviour
     #endregion
 
     #region Gizmos
-    void OnDrawGizmos()
+    void OnDrawGizmosSelected()
     {
         if(!circleArea)
         {
