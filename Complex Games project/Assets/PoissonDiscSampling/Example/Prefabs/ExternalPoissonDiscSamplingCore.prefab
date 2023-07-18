@@ -49,6 +49,10 @@ MonoBehaviour:
   objectRadius: 2
   maxObjectRadiusMultiplier: 5
   attempts: 10
+  maxAscent: 5
+  maxDescent: 5
+  maxSlope: 45
+  bottomOfSpawnedObject: {fileID: 0}
   allObjects: []
   isCore: 0
   centerPosition: {x: 0, y: 0, z: 0}
