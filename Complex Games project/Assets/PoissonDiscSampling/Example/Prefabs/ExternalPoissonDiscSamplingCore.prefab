@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f8405859f7236eb4f8a3ed6c562b1d62, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  desiredPrefab: {fileID: 6940251933932056484, guid: 86a04f5e7c3b59e4f8ef1febf37f0bda, type: 3}
+  desiredPrefab: {fileID: 8375073706738873464, guid: e4799bad620add74da8457bdae00b34d, type: 3}
   layerNumber: 6
   objectRadius: 2
   maxObjectRadiusMultiplier: 5
@@ -52,7 +52,6 @@ MonoBehaviour:
   maxAscent: 5
   maxDescent: 5
   maxSlope: 45
-  bottomOfSpawnedObject: {fileID: 0}
   allObjects: []
   isCore: 0
   centerPosition: {x: 0, y: 0, z: 0}

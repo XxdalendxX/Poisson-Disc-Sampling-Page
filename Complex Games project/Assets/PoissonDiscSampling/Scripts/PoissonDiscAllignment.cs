@@ -9,6 +9,7 @@ using static UnityEditor.PlayerSettings;
 
 public class PoissonDiscAllignment : MonoBehaviour
 {
+    #region MainVariables
     [SerializeField] GameObject desiredPrefab;
     [SerializeField] int layerNumber = 0;
 
@@ -46,6 +47,7 @@ public class PoissonDiscAllignment : MonoBehaviour
     bool borderCheck = false;
     bool raycastCheck = false;
     bool slopeCheck =  false;
+    #endregion
 
     /// called from the custom inspector to start the algorithm
     #region ExecuteFunction
@@ -65,18 +67,18 @@ public class PoissonDiscAllignment : MonoBehaviour
             }
             else
             {
-                //PerformCoreSquare();
+                PerformCoreSquare();
             }
         }
         else
         {
             if (circleArea)
             {
-                //PerformCorelessCircle();
+                PerformCorelessCircle();
             }
             else
             {
-                //PerformCorelessSquare();
+                PerformCorelessSquare();
             }
         }
     }
@@ -182,8 +184,6 @@ public class PoissonDiscAllignment : MonoBehaviour
                 }
                 
             }
-            //provides details on open list, closed list and the amount of checks that failed while the object was going through the loop
-            ///Debug.Log("Placement test failed: " + fails + ", || Open List count: " + openList.Count + " || Closed List count: " + closedList.Count );
             iterations = 0;
             fails = 0;
             //removes transform from open list and transfers it to the closed list
@@ -221,14 +221,29 @@ public class PoissonDiscAllignment : MonoBehaviour
             {
                 //finds a location to perform checks within that meets position critera
                 Vector3 position = FindLocation(y, currentObjectPos);
-                Collider[] colliders = Physics.OverlapSphere(position, objectRadius, layerMask, QueryTriggerInteraction.Collide);
-                ColliderCheck(colliders.Length);
-                CheckPosInCircleBorder(position, epicenter.transform.position);
+
+                RaycastHit hit;
+                if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), LayerMask.GetMask("Ground")))
+                {
+                    raycastCheck = true;
+
+
+                    CheckPosInQuadBorder(hit.point, epicenter.transform.position);
+
+                    Collider[] colliders = Physics.OverlapSphere(hit.point, objectRadius, layerMask, QueryTriggerInteraction.Collide);
+                    ColliderCheck(colliders.Length);
+
+                    if (Vector3.Angle(hit.normal, Vector3.up) <= maxSlope)
+                        slopeCheck = true;
+
+                }
 
                 if (CheckToBePlaced())
                 {
                     //places object in world and assigns collider radius
-                    GameObject spawnedObject = SpawnObject(desiredPrefab, position, Quaternion.identity);
+                    Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
+                    Vector3 spawnPosition = hit.point;
+                    GameObject spawnedObject = SpawnObject(desiredPrefab, spawnPosition, rotation);
                     SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
                     sCollider.radius = objectRadius;
 
@@ -237,15 +252,13 @@ public class PoissonDiscAllignment : MonoBehaviour
                     allObjects.Add(spawnedObject);
                     iterations = 0;
                 }
-                if (colliders.Length > 0)
+                else
                 {
                     //position check failed and fail counter and iteration counter goes up
                     fails++;
                     iterations++;
                 }
             }
-            //provides details on open list, closed list and the amount of checks that failed while the object was going through the loop
-            Debug.Log("Placement test failed: " + fails + ", || Open List count: " + openList.Count + " || Closed List count: " + closedList.Count);
             iterations = 0;
             fails = 0;
             //removes transform from open list and transfers it to the closed list
@@ -270,17 +283,41 @@ public class PoissonDiscAllignment : MonoBehaviour
         while (!gotFirstObject)
         {
             Vector3 position;
-            position.x = Random.Range(centerPosition.x - (XDiameter/2) , centerPosition.x + (XDiameter / 2));
+            float min = centerPosition.x - (borderRadius);
+            float max = centerPosition.x + (borderRadius);
+            var range = Random.Range(min, max);
+            var angle = Random.Range(0, 360);
+            position.x = centerPosition.x + Mathf.Cos(angle) * range;
             position.y = y;
-            position.z = Random.Range(centerPosition.z - (ZDiameter / 2), centerPosition.z + (ZDiameter / 2));
-            Collider[] colliders = Physics.OverlapSphere(position, objectRadius, layerMask, QueryTriggerInteraction.Collide);
-            ColliderCheck(colliders.Length);
-            CheckPosInCircleBorder(position, epicenter.transform.position);
+            position.z = centerPosition.z + Mathf.Sin(angle) * range;
+            position.y = y;
+            position.z = Random.Range(centerPosition.z - (borderRadius), centerPosition.z + (ZDiameter / 2));
+            
+            RaycastHit hit;
+            if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), LayerMask.GetMask("Ground")))
+            {
+                raycastCheck = true;
+
+
+                CheckPosInCircleBorder(hit.point, centerPosition);
+
+                Collider[] colliders = Physics.OverlapSphere(hit.point, objectRadius, layerMask, QueryTriggerInteraction.Collide);
+                ColliderCheck(colliders.Length);
+
+                if (Vector3.Angle(hit.normal, Vector3.up) <= maxSlope)
+                    slopeCheck = true;
+
+            }
 
             if (CheckToBePlaced())
             {
-                openList.Add(position);
-                GameObject spawnedObject = SpawnObject(desiredPrefab, position, Quaternion.identity);
+                //places object in world and assigns collider radius
+                Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
+                Vector3 spawnPosition = hit.point;
+                GameObject spawnedObject = SpawnObject(desiredPrefab, spawnPosition, rotation);
+                SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
+                sCollider.radius = objectRadius;
+                openList.Add(spawnedObject.transform.position);
                 allObjects.Add(spawnedObject);
                 gotFirstObject = true;
             }
@@ -312,31 +349,46 @@ public class PoissonDiscAllignment : MonoBehaviour
             {
                 //finds a location to perform checks within that meets position critera
                 Vector3 position = FindLocation(y, currentObjectPos);
-                Collider[] colliders = Physics.OverlapSphere(position, objectRadius, layerMask, QueryTriggerInteraction.Collide);
-                ColliderCheck(colliders.Length);
-                CheckPosInCircleBorder(position, epicenter.transform.position);
 
-                if (CheckToBePlaced())
+                RaycastHit hit;
+                if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), LayerMask.GetMask("Ground")))
+                {
+                    raycastCheck = true;
+
+
+                    CheckPosInCircleBorder(hit.point, centerPosition);
+
+                    Collider[] colliders = Physics.OverlapSphere(hit.point, objectRadius, layerMask, QueryTriggerInteraction.Collide);
+                    ColliderCheck(colliders.Length);
+
+                    if (Vector3.Angle(hit.normal, Vector3.up) <= maxSlope)
+                        slopeCheck = true;
+
+                }
+
+                if (CheckToBePlaced() == true)
                 {
                     //places object in world and assigns collider radius
-                    GameObject spawnedObject = SpawnObject(desiredPrefab, position, Quaternion.identity);
+                    Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
+                    Vector3 spawnPosition = hit.point;
+                    GameObject spawnedObject = SpawnObject(desiredPrefab, spawnPosition, rotation);
                     SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
                     sCollider.radius = objectRadius;
+
 
                     //adds object transform and gameObject to openList and allObjects respectively and resets the iteration counter  
                     openList.Add(spawnedObject.transform.position);
                     allObjects.Add(spawnedObject);
                     iterations = 0;
                 }
-                if (colliders.Length > 0)
+                else
                 {
-                    //position check failed and fail counter and iteration counter goes up
+                    //check failed and fail counter and iteration counter goes up
                     fails++;
                     iterations++;
                 }
+
             }
-            //provides details on open list, closed list and the amount of checks that failed while the object was going through the loop
-            Debug.Log("Placement test failed: " + fails + ", || Open List count: " + openList.Count + " || Closed List count: " + closedList.Count);
             iterations = 0;
             fails = 0;
             //removes transform from open list and transfers it to the closed list
@@ -355,24 +407,47 @@ public class PoissonDiscAllignment : MonoBehaviour
         List<Vector3> closedList = new List<Vector3>();
         bool mustStop = false;
 
-        //assigns core object in open list and all objects list 
+        //Creates and assigns starting object in open list and all objects list if there is an available slot
         bool gotFirstObject = false;
         int attempt = 0;
         while (!gotFirstObject)
         {
             Vector3 position;
-            position.x = Random.Range(centerPosition.x - (XDiameter / 2), centerPosition.x + (XDiameter / 2));
+            float min = centerPosition.x - (XDiameter/2);
+            float max = centerPosition.x + (ZDiameter/2);
+            var range = Random.Range(min, max);
+            var angle = Random.Range(0, 360);
+            position.x = centerPosition.x + Mathf.Cos(angle) * range;
             position.y = y;
-            position.z = Random.Range(centerPosition.z - (ZDiameter / 2), centerPosition.z + (ZDiameter / 2));
-            Debug.Log(position);
-            Collider[] colliders = Physics.OverlapSphere(position, objectRadius, layerMask, QueryTriggerInteraction.Collide);
-            ColliderCheck(colliders.Length);
-            CheckPosInCircleBorder(position, epicenter.transform.position);
+            position.z = centerPosition.z + Mathf.Sin(angle) * range;
+            position.y = y;
+            position.z = Random.Range(centerPosition.z - (borderRadius), centerPosition.z + (ZDiameter / 2));
+
+            RaycastHit hit;
+            if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), LayerMask.GetMask("Ground")))
+            {
+                raycastCheck = true;
+
+
+                CheckPosInQuadBorder(hit.point, centerPosition);
+
+                Collider[] colliders = Physics.OverlapSphere(hit.point, objectRadius, layerMask, QueryTriggerInteraction.Collide);
+                ColliderCheck(colliders.Length);
+
+                if (Vector3.Angle(hit.normal, Vector3.up) <= maxSlope)
+                    slopeCheck = true;
+
+            }
 
             if (CheckToBePlaced())
             {
-                openList.Add(position);
-                GameObject spawnedObject = SpawnObject(desiredPrefab, position, Quaternion.identity);
+                //places object in world and assigns collider radius
+                Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
+                Vector3 spawnPosition = hit.point;
+                GameObject spawnedObject = SpawnObject(desiredPrefab, spawnPosition, rotation);
+                SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
+                sCollider.radius = objectRadius;
+                openList.Add(spawnedObject.transform.position);
                 allObjects.Add(spawnedObject);
                 gotFirstObject = true;
             }
@@ -404,31 +479,46 @@ public class PoissonDiscAllignment : MonoBehaviour
             {
                 //finds a location to perform checks within that meets position critera
                 Vector3 position = FindLocation(y, currentObjectPos);
-                Collider[] colliders = Physics.OverlapSphere(position, objectRadius, layerMask, QueryTriggerInteraction.Collide);
-                ColliderCheck(colliders.Length);
-                CheckPosInCircleBorder(position, epicenter.transform.position);
 
-                if (CheckToBePlaced())
+                RaycastHit hit;
+                if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), LayerMask.GetMask("Ground")))
+                {
+                    raycastCheck = true;
+
+
+                    CheckPosInQuadBorder(hit.point, centerPosition);
+
+                    Collider[] colliders = Physics.OverlapSphere(hit.point, objectRadius, layerMask, QueryTriggerInteraction.Collide);
+                    ColliderCheck(colliders.Length);
+
+                    if (Vector3.Angle(hit.normal, Vector3.up) <= maxSlope)
+                        slopeCheck = true;
+
+                }
+
+                if (CheckToBePlaced() == true)
                 {
                     //places object in world and assigns collider radius
-                    GameObject spawnedObject = SpawnObject(desiredPrefab, position, Quaternion.identity);
+                    Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
+                    Vector3 spawnPosition = hit.point;
+                    GameObject spawnedObject = SpawnObject(desiredPrefab, spawnPosition, rotation);
                     SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
                     sCollider.radius = objectRadius;
+
 
                     //adds object transform and gameObject to openList and allObjects respectively and resets the iteration counter  
                     openList.Add(spawnedObject.transform.position);
                     allObjects.Add(spawnedObject);
                     iterations = 0;
                 }
-                if (colliders.Length > 0)
+                else
                 {
-                    //position check failed and fail counter and iteration counter goes up
+                    //check failed and fail counter and iteration counter goes up
                     fails++;
                     iterations++;
                 }
+
             }
-            //provides details on open list, closed list and the amount of checks that failed while the object was going through the loop
-            Debug.Log("Placement test failed: " + fails + ", || Open List count: " + openList.Count + " || Closed List count: " + closedList.Count);
             iterations = 0;
             fails = 0;
             //removes transform from open list and transfers it to the closed list
@@ -447,11 +537,7 @@ public class PoissonDiscAllignment : MonoBehaviour
         float distance = position1 - position2;
         return distance;
     }
-    public float GetObjectRadius()
-    {
-        return objectRadius;
-    }
-
+  
     Vector3 FindLocation(float y, Vector3 objectTransform)
     {
         float min = objectRadius * 2;
@@ -485,6 +571,12 @@ public class PoissonDiscAllignment : MonoBehaviour
     {
         return allObjects.Count;
     }
+
+    public float GetObjectRadius()
+    {
+        return objectRadius;
+    }
+
     #endregion
 
     #region Checks
@@ -502,7 +594,6 @@ public class PoissonDiscAllignment : MonoBehaviour
         float radius = Mathf.Sqrt(Mathf.Pow(position.x, 2) + Mathf.Pow(position.z, 2));
         if (distance <= borderRadius)
         {
-            Debug.Log(distance);
             borderCheck = true;
         }
     }
