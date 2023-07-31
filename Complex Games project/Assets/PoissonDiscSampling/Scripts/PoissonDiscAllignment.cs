@@ -5,7 +5,6 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
-using static UnityEditor.PlayerSettings;
 
 public class PoissonDiscAllignment : MonoBehaviour
 {
@@ -55,7 +54,7 @@ public class PoissonDiscAllignment : MonoBehaviour
     {
         layerMask = LayerMask.GetMask(LayerMask.LayerToName(layerNumber));
 
-        pushOut = DistanceEquation(desiredPrefab.GetComponentInChildren<Transform>().position.y, desiredPrefab.transform.position.y);
+        pushOut = desiredPrefab.GetComponentInChildren<Transform>().position.y - desiredPrefab.transform.position.y;
         
         if(isCore)
         {
@@ -166,7 +165,7 @@ public class PoissonDiscAllignment : MonoBehaviour
                     //places object in world and assigns collider radius
                     Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
                     Vector3 spawnPosition = hit.point;
-                    GameObject spawnedObject = SpawnObject(desiredPrefab, spawnPosition, rotation);
+                    GameObject spawnedObject = Instantiate(desiredPrefab, spawnPosition, rotation);
                     SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
                     sCollider.radius = objectRadius;
 
@@ -243,7 +242,7 @@ public class PoissonDiscAllignment : MonoBehaviour
                     //places object in world and assigns collider radius
                     Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
                     Vector3 spawnPosition = hit.point;
-                    GameObject spawnedObject = SpawnObject(desiredPrefab, spawnPosition, rotation);
+                    GameObject spawnedObject = Instantiate(desiredPrefab, spawnPosition, rotation);
                     SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
                     sCollider.radius = objectRadius;
 
@@ -314,7 +313,7 @@ public class PoissonDiscAllignment : MonoBehaviour
                 //places object in world and assigns collider radius
                 Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
                 Vector3 spawnPosition = hit.point;
-                GameObject spawnedObject = SpawnObject(desiredPrefab, spawnPosition, rotation);
+                GameObject spawnedObject = Instantiate(desiredPrefab, spawnPosition, rotation);
                 SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
                 sCollider.radius = objectRadius;
                 openList.Add(spawnedObject.transform.position);
@@ -371,7 +370,7 @@ public class PoissonDiscAllignment : MonoBehaviour
                     //places object in world and assigns collider radius
                     Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
                     Vector3 spawnPosition = hit.point;
-                    GameObject spawnedObject = SpawnObject(desiredPrefab, spawnPosition, rotation);
+                    GameObject spawnedObject = Instantiate(desiredPrefab, spawnPosition, rotation);
                     SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
                     sCollider.radius = objectRadius;
 
@@ -444,7 +443,7 @@ public class PoissonDiscAllignment : MonoBehaviour
                 //places object in world and assigns collider radius
                 Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
                 Vector3 spawnPosition = hit.point;
-                GameObject spawnedObject = SpawnObject(desiredPrefab, spawnPosition, rotation);
+                GameObject spawnedObject = Instantiate(desiredPrefab, spawnPosition, rotation);
                 SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
                 sCollider.radius = objectRadius;
                 openList.Add(spawnedObject.transform.position);
@@ -501,7 +500,7 @@ public class PoissonDiscAllignment : MonoBehaviour
                     //places object in world and assigns collider radius
                     Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
                     Vector3 spawnPosition = hit.point;
-                    GameObject spawnedObject = SpawnObject(desiredPrefab, spawnPosition, rotation);
+                    GameObject spawnedObject = Object.Instantiate(desiredPrefab, spawnPosition, rotation);
                     SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
                     sCollider.radius = objectRadius;
 
@@ -531,12 +530,6 @@ public class PoissonDiscAllignment : MonoBehaviour
 
     /// Miscilaneous Functions to help perform
     #region MiscelaneousFunctions
-
-    float DistanceEquation(float position1,float position2)
-    {
-        float distance = position1 - position2;
-        return distance;
-    }
   
     Vector3 FindLocation(float y, Vector3 objectTransform)
     {
@@ -547,12 +540,6 @@ public class PoissonDiscAllignment : MonoBehaviour
         var x = objectTransform.x + Mathf.Cos(angle) * range;
         var z = objectTransform.z + Mathf.Sin(angle) * range;
         return new Vector3(x,y,z);
-    }
-
-    GameObject SpawnObject(GameObject gameObject, Vector3 position, Quaternion rotation)
-    {
-        
-        return Instantiate(gameObject, position, rotation);
     }
 
     Vector3 GetMaxAscentPos(Vector3 pos)
