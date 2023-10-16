@@ -10,7 +10,9 @@ public class PoissonDiscAllignment : MonoBehaviour
 {
     #region MainVariables
     [SerializeField] GameObject desiredPrefab;
+    [SerializeField] Transform desiredInstantiateLocation;
     [SerializeField] string targetLayerName = "";
+    [SerializeField] string checkAgainstLayerName = "";
 
     [Header("Object radius")]
     [SerializeField] float objectRadius = 5f;
@@ -37,8 +39,8 @@ public class PoissonDiscAllignment : MonoBehaviour
 
 
     ///private variables
-    LayerMask layerMask;
-    GameObject epicenter;
+    LayerMask groundLayerMask;
+    LayerMask targetLayerMask;
     float pushOut;
 
     bool colliderCheck = false;
@@ -51,7 +53,8 @@ public class PoissonDiscAllignment : MonoBehaviour
     #region ExecuteFunction
     public void Execute()
     {
-        layerMask = LayerMask.GetMask(targetLayerName);
+        groundLayerMask = LayerMask.GetMask(targetLayerName);
+        targetLayerMask = LayerMask.GetMask(checkAgainstLayerName);
 
         pushOut = desiredPrefab.GetComponentInChildren<Transform>().position.y - desiredPrefab.transform.position.y;
 
@@ -77,421 +80,6 @@ public class PoissonDiscAllignment : MonoBehaviour
 
     /// Main Functions that performs the algorithm
     #region MainFunctions
-    void PerformCoreCircle()
-    {
-        //creates core variables
-        float y = epicenter.transform.position.y;
-        int iterations = 0;
-        List<Vector3> openList = new List<Vector3>();
-        List<Vector3> closedList = new List<Vector3>();
-        bool mustStop = false;
-
-        //assigns core object in open list and all objects list 
-        openList.Add(epicenter.transform.position);
-        allObjects.Add(epicenter);
-
-        while (!mustStop)
-        {
-            if (openList.Count < 1)
-            {
-                //if open list is empty then break the loop
-                mustStop = true;
-                break;
-            }
-            Vector3 currentObjectPos = openList[0];
-
-            int fails = 0;
-            while (iterations <= totalAttempts)
-            {
-                //finds a location
-                Vector3 position = FindLocation(y, currentObjectPos);
-                
-                //Raycast check, collider check and slope check
-                RaycastHit hit;
-                if(Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit , GetRayCheckDistance(), LayerMask.GetMask("Ground")))
-                {
-                    raycastCheck = true;
-
-
-                    CheckPosInCircleBorder(hit.point, epicenter.transform.position);
-
-                    Collider[] colliders = Physics.OverlapSphere(hit.point, objectRadius, layerMask, QueryTriggerInteraction.Collide);
-                    ColliderCheck(colliders.Length);
-
-                    if (Vector3.Angle(hit.normal, Vector3.up) <= maxSlope)
-                        slopeCheck = true;
-
-                }
-
-                if (CanBePlaced() == true)
-                {
-                    //places object in world and assigns collider radius
-                    Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
-                    Vector3 spawnPosition = hit.point;
-                    GameObject spawnedObject = Instantiate(desiredPrefab, spawnPosition, rotation);
-                    SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
-                    sCollider.radius = objectRadius;
-
-
-                    //adds object transform and gameObject to openList and allObjects respectively and resets the iteration counter  
-                    openList.Add(spawnedObject.transform.position);
-                    allObjects.Add(spawnedObject);
-                    iterations = 0;
-                }
-                else
-                {
-                    //check failed and fail counter and iteration counter goes up
-                    fails++;
-                    iterations++;
-                }
-                
-            }
-            iterations = 0;
-            fails = 0;
-            //removes transform from open list and transfers it to the closed list
-            openList.RemoveAt(0);
-            closedList.Add(currentObjectPos);
-        }
-        Debug.Log("PDS complete");
-    }
-
-    void PerformCoreSquare()
-    {
-        //creates core variables
-        float y = epicenter.transform.position.y;
-        int iterations = 0;
-        List<Vector3> openList = new List<Vector3>();
-        List<Vector3> closedList = new List<Vector3>();
-        bool mustStop = false;
-
-        //assigns core object in open list and all objects list 
-        openList.Add(epicenter.transform.position);
-        allObjects.Add(epicenter);
-
-        while (!mustStop)
-        {
-            if (openList.Count < 1)
-            {
-                //if open list is empty then break the loop
-                mustStop = true;
-                break;
-            }
-            Vector3 currentObjectPos = openList[0];
-
-            int fails = 0;
-            while (iterations <= totalAttempts)
-            {
-                //finds a location to perform checks within that meets position critera
-                Vector3 position = FindLocation(y, currentObjectPos);
-
-                RaycastHit hit;
-                if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), LayerMask.GetMask("Ground")))
-                {
-                    raycastCheck = true;
-
-
-                    CheckPosInQuadBorder(hit.point, epicenter.transform.position);
-
-                    Collider[] colliders = Physics.OverlapSphere(hit.point, objectRadius, layerMask, QueryTriggerInteraction.Collide);
-                    ColliderCheck(colliders.Length);
-
-                    if (Vector3.Angle(hit.normal, Vector3.up) <= maxSlope)
-                        slopeCheck = true;
-
-                }
-
-                if (CanBePlaced())
-                {
-                    //places object in world and assigns collider radius
-                    Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
-                    Vector3 spawnPosition = hit.point;
-                    GameObject spawnedObject = Instantiate(desiredPrefab, spawnPosition, rotation);
-                    SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
-                    sCollider.radius = objectRadius;
-
-                    //adds object transform and gameObject to openList and allObjects respectively and resets the iteration counter  
-                    openList.Add(spawnedObject.transform.position);
-                    allObjects.Add(spawnedObject);
-                    iterations = 0;
-                }
-                else
-                {
-                    //position check failed and fail counter and iteration counter goes up
-                    fails++;
-                    iterations++;
-                }
-            }
-            iterations = 0;
-            fails = 0;
-            //removes transform from open list and transfers it to the closed list
-            openList.RemoveAt(0);
-            closedList.Add(currentObjectPos);
-        }
-        Debug.Log("PDS complete");
-    }
-
-    void PerformCorelessCircle()
-    {
-        //creates core variables
-        float y = centerPosition.y;
-        int iterations = 0;
-        List<Vector3> openList = new List<Vector3>();
-        List<Vector3> closedList = new List<Vector3>();
-        bool mustStop = false;
-
-        //Creates and assigns starting object in open list and all objects list if there is an available slot
-        bool gotFirstObject = false;
-        int attempt = 0;
-
-        while (!gotFirstObject)
-        {
-            Vector3 position;
-            float min = centerPosition.x - (borderRadius);
-            float max = centerPosition.x + (borderRadius);
-            var range = Random.Range(min, max);
-            var angle = Random.Range(0, 360);
-            position.x = centerPosition.x + Mathf.Cos(angle) * range;
-            position.y = y;
-            position.z = centerPosition.z + Mathf.Sin(angle) * range;
-            //position.y = y;
-            //position.z = Random.Range(centerPosition.z - (borderRadius), centerPosition.z + (ZDiameter / 2));
-            
-            RaycastHit hit;
-            if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), LayerMask.GetMask("Ground")))
-            {
-                raycastCheck = true;
-
-
-                CheckPosInCircleBorder(hit.point, centerPosition);
-
-                Collider[] colliders = Physics.OverlapSphere(hit.point, objectRadius, layerMask, QueryTriggerInteraction.Collide);
-                ColliderCheck(colliders.Length);
-
-                if (Vector3.Angle(hit.normal, Vector3.up) <= maxSlope)
-                    slopeCheck = true;
-
-            }
-
-            if (CanBePlaced())
-            {
-                //places object in world and assigns collider radius
-                Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
-                Vector3 spawnPosition = hit.point;
-                GameObject spawnedObject = Instantiate(desiredPrefab, spawnPosition, rotation);
-                SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
-                sCollider.radius = objectRadius;
-                openList.Add(spawnedObject.transform.position);
-                allObjects.Add(spawnedObject);
-                gotFirstObject = true;
-            }
-            else
-            {
-                attempt++;
-            }
-
-            if(attempt > totalAttempts)
-            {
-                gotFirstObject = true;
-                Debug.Log("Failed to find an available location");
-            }
-            
-        }
-
-        while (!mustStop)
-        {
-            if (openList.Count < 1)
-            {
-                //if open list is empty then break the loop
-                mustStop = true;
-                break;
-            }
-            Vector3 currentObjectPos = openList[0];
-
-            int fails = 0;
-            while (iterations <= totalAttempts)
-            {
-                //finds a location to perform checks within that meets position critera
-                Vector3 position = FindLocation(y, currentObjectPos);
-
-                RaycastHit hit;
-                if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), layerMask))
-                {
-                    raycastCheck = true;
-
-
-                    CheckPosInCircleBorder(hit.point, centerPosition);
-
-                    Collider[] colliders = Physics.OverlapSphere(hit.point, objectRadius, layerMask, QueryTriggerInteraction.Collide);
-                    ColliderCheck(colliders.Length);
-
-                    if (Vector3.Angle(hit.normal, Vector3.up) <= maxSlope)
-                        slopeCheck = true;
-
-                }
-
-                if (CanBePlaced() == true)
-                {
-                    //places object in world and assigns collider radius
-                    Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
-                    Vector3 spawnPosition = hit.point;
-                    GameObject spawnedObject = Instantiate(desiredPrefab, spawnPosition, rotation);
-                    SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
-                    sCollider.radius = objectRadius;
-
-
-                    //adds object transform and gameObject to openList and allObjects respectively and resets the iteration counter  
-                    openList.Add(spawnedObject.transform.position);
-                    allObjects.Add(spawnedObject);
-                    iterations = 0;
-                }
-                else
-                {
-                    //check failed and fail counter and iteration counter goes up
-                    fails++;
-                    iterations++;
-                }
-
-            }
-            iterations = 0;
-            fails = 0;
-            //removes transform from open list and transfers it to the closed list
-            openList.RemoveAt(0);
-            closedList.Add(currentObjectPos);
-        }
-        Debug.Log("PDS complete");
-    }
-
-    void PerformCorelessSquare()
-    {
-        //creates core variables
-        float y = centerPosition.y;
-        int iterations = 0;
-        List<Vector3> openList = new List<Vector3>();
-        List<Vector3> closedList = new List<Vector3>();
-        bool mustStop = false;
-
-        //Creates and assigns starting object in open list and all objects list if there is an available slot
-        bool gotFirstObject = false;
-        int attempt = 0;
-
-        while (!gotFirstObject)
-        {
-            Vector3 position;
-            float min = centerPosition.x - (XDiameter/2);
-            float max = centerPosition.x + (ZDiameter/2);
-            var range = Random.Range(min, max);
-            var angle = Random.Range(0, 360);
-            position.x = centerPosition.x + Mathf.Cos(angle) * range;
-            position.y = y;
-            position.z = centerPosition.z + Mathf.Sin(angle) * range;
-            position.y = y;
-            position.z = Random.Range(centerPosition.z - (borderRadius), centerPosition.z + (ZDiameter / 2));
-
-            RaycastHit hit;
-            if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), LayerMask.GetMask("Ground")))
-            {
-                raycastCheck = true;
-
-
-                CheckPosInQuadBorder(hit.point, centerPosition);
-
-                Collider[] colliders = Physics.OverlapSphere(hit.point, objectRadius, layerMask, QueryTriggerInteraction.Collide);
-                ColliderCheck(colliders.Length);
-
-                if (Vector3.Angle(hit.normal, Vector3.up) <= maxSlope)
-                    slopeCheck = true;
-
-            }
-
-            if (CanBePlaced())
-            {
-                //places object in world and assigns collider radius
-                Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
-                Vector3 spawnPosition = hit.point;
-                GameObject spawnedObject = Instantiate(desiredPrefab, spawnPosition, rotation);
-                SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
-                sCollider.radius = objectRadius;
-                openList.Add(spawnedObject.transform.position);
-                allObjects.Add(spawnedObject);
-                gotFirstObject = true;
-            }
-            else
-            {
-                attempt++;
-            }
-
-            if (attempt > totalAttempts)
-            {
-                gotFirstObject = true;
-                Debug.Log("Failed to find an available location");
-            }
-
-        }
-
-        while (!mustStop)
-        {
-            if (openList.Count < 1)
-            {
-                //if open list is empty then break the loop
-                mustStop = true;
-                break;
-            }
-            Vector3 currentObjectPos = openList[0];
-
-            int fails = 0;
-            while (iterations <= totalAttempts)
-            {
-                //finds a location to perform checks within that meets position critera
-                Vector3 position = FindLocation(y, currentObjectPos);
-
-                RaycastHit hit;
-                if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), LayerMask.GetMask("Ground")))
-                {
-                    raycastCheck = true;
-
-
-                    CheckPosInQuadBorder(hit.point, centerPosition);
-
-                    Collider[] colliders = Physics.OverlapSphere(hit.point, objectRadius, layerMask, QueryTriggerInteraction.Collide);
-                    ColliderCheck(colliders.Length);
-
-                    if (Vector3.Angle(hit.normal, Vector3.up) <= maxSlope)
-                        slopeCheck = true;
-
-                }
-
-                if (CanBePlaced() == true)
-                {
-                    //places object in world and assigns collider radius
-                    Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
-                    Vector3 spawnPosition = hit.point;
-                    GameObject spawnedObject = Object.Instantiate(desiredPrefab, spawnPosition, rotation);
-                    SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
-                    sCollider.radius = objectRadius;
-
-
-                    //adds object transform and gameObject to openList and allObjects respectively and resets the iteration counter  
-                    openList.Add(spawnedObject.transform.position);
-                    allObjects.Add(spawnedObject);
-                    iterations = 0;
-                }
-                else
-                {
-                    //check failed and fail counter and iteration counter goes up
-                    fails++;
-                    iterations++;
-                }
-
-            }
-            iterations = 0;
-            fails = 0;
-            //removes transform from open list and transfers it to the closed list
-            openList.RemoveAt(0);
-            closedList.Add(currentObjectPos);
-        }
-        Debug.Log("PDS complete");
-    }
-
     void PerformPDS()
     {
         //creates core variables
@@ -525,12 +113,12 @@ public class PoissonDiscAllignment : MonoBehaviour
                 Vector3 position = FindLocation(yPos, currentObjectPos);
 
                 RaycastHit hit;
-                if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), LayerMask.GetMask("Ground")))
+                if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), groundLayerMask))
                 {
                     PerformChecks(hit);
                 }
 
-                if (CanBePlaced() == true)
+                if (CheckIfCanBePlaced() == true)
                 {
                     GameObject spawnedObject = PlaceObject(hit);
                     openList.Add(spawnedObject.transform.position);
@@ -560,27 +148,20 @@ public class PoissonDiscAllignment : MonoBehaviour
 
         while (!gotFirstObject)
         {
-            Vector3 position = GetFirstPosition(yPos);
+            Vector3 position = FindFirstPosition(yPos);
+
+            Debug.Log(position);
 
             RaycastHit hit;
-            if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), LayerMask.GetMask("Ground")))
+            //check raycast as problem exists here
+            if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), groundLayerMask))
             {
-                raycastCheck = true;
-
-                if (!circleArea)
-                    CheckPosInQuadBorder(hit.point, centerPosition);
-                else
-                    CheckPosInCircleBorder(hit.point, centerPosition);
-
-                Collider[] colliders = Physics.OverlapSphere(hit.point, objectRadius, layerMask, QueryTriggerInteraction.Collide);
-                ColliderCheck(colliders.Length);
-
-                if (Vector3.Angle(hit.normal, Vector3.up) <= maxSlope)
-                    slopeCheck = true;
-
+                PerformChecks(hit);
             }
 
-            if (CanBePlaced())
+            Debug.Log(hit);
+
+            if (CheckIfCanBePlaced())
             {
                 GameObject spawnedObject = PlaceObject(hit);
                 openList.Add(spawnedObject.transform.position);
@@ -599,8 +180,24 @@ public class PoissonDiscAllignment : MonoBehaviour
         }
         return gotFirstObject;
     }
+    GameObject PlaceObject(RaycastHit hit)
+    {
+        //places object in world and assigns collider radius
+        Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
+        Vector3 spawnPosition = hit.point;
+        GameObject spawnedObject;
 
-    Vector3 GetFirstPosition(float yPos)
+        if (desiredInstantiateLocation != null)
+            spawnedObject = Instantiate(desiredPrefab, spawnPosition, rotation, desiredInstantiateLocation);
+        else
+            spawnedObject = Instantiate(desiredPrefab, spawnPosition, rotation);
+
+        SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
+        sCollider.radius = objectRadius;
+        return spawnedObject;
+    }
+
+    Vector3 FindFirstPosition(float yPos)
     {
         Vector3 position;
         float min = 0;
@@ -624,12 +221,6 @@ public class PoissonDiscAllignment : MonoBehaviour
 
         return position;
     }
-
-    #endregion
-
-    /// Miscilaneous Functions to help perform
-    #region MiscelaneousFunctions
-
     Vector3 FindLocation(float y, Vector3 objectTransform)
     {
         float min = objectRadius * 2;
@@ -638,9 +229,13 @@ public class PoissonDiscAllignment : MonoBehaviour
         var angle = Random.Range(0, 360);
         var x = objectTransform.x + Mathf.Cos(angle) * range;
         var z = objectTransform.z + Mathf.Sin(angle) * range;
-        return new Vector3(x,y,z);
+        return new Vector3(x, y, z);
     }
 
+    #endregion
+
+    /// Miscilaneous Functions to help perform
+    #region MiscelaneousFunctions
     Vector3 GetMaxAscentPos(Vector3 pos)
     {
         Vector3 fromPos = new Vector3(pos.x, pos.y + maxAscent, pos.z);
@@ -662,37 +257,25 @@ public class PoissonDiscAllignment : MonoBehaviour
     {
         return objectRadius;
     }
+    #endregion
 
+    #region Checks
     void PerformChecks(RaycastHit hit)
     {
         raycastCheck = true;
 
         if (circleArea)
-            CheckPosInCircleBorder(hit.point, centerPosition);
+            CheckPositionInBorder(hit.point, centerPosition);
         else
-            CheckPosInQuadBorder(hit.point, centerPosition);
+            CheckPositionInBorder(hit.point, centerPosition);
 
-        Collider[] colliders = Physics.OverlapSphere(hit.point, objectRadius, layerMask, QueryTriggerInteraction.Collide);
+        Collider[] colliders = Physics.OverlapSphere(hit.point, objectRadius, targetLayerMask, QueryTriggerInteraction.Collide);
         ColliderCheck(colliders.Length);
 
         if (Vector3.Angle(hit.normal, Vector3.up) <= maxSlope)
             slopeCheck = true;
     }
 
-    GameObject PlaceObject(RaycastHit hit)
-    {
-        //places object in world and assigns collider radius
-        Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
-        Vector3 spawnPosition = hit.point;
-        GameObject spawnedObject = Instantiate(desiredPrefab, spawnPosition, rotation);
-        SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
-        sCollider.radius = objectRadius;
-        return spawnedObject;
-    }
-
-    #endregion
-
-    #region Checks
     void ColliderCheck(int colliderLength)
     {
         if (colliderLength < 1)
@@ -701,33 +284,35 @@ public class PoissonDiscAllignment : MonoBehaviour
         }
     }
 
-    void CheckPosInCircleBorder(Vector3 position, Vector3 corePosition)
+    void CheckPositionInBorder(Vector3 position, Vector3 corePosition)
     {
-        float distance = Mathf.Sqrt(Mathf.Pow(position.x - corePosition.x, 2) + Mathf.Pow(position.z - corePosition.z, 2));
-        float radius = Mathf.Sqrt(Mathf.Pow(position.x, 2) + Mathf.Pow(position.z, 2));
-        if (distance <= borderRadius)
+        if(circleArea)
         {
-            borderCheck = true;
-        }
-    }
-
-    void CheckPosInQuadBorder(Vector3 position, Vector3 corePos)
-    {
-        float XMax = corePos.x + (XDiameter / 2);
-        float XMin = corePos.x - (XDiameter / 2);
-        float ZMax = corePos.z + (ZDiameter / 2);
-        float ZMin = corePos.z - (ZDiameter / 2);
-
-        if (position.x <= XMax && position.x >= XMin)
-        {
-            if (position.z <= ZMax && position.z >= ZMin)
+            float distance = Mathf.Sqrt(Mathf.Pow(position.x - corePosition.x, 2) + Mathf.Pow(position.z - corePosition.z, 2));
+            float radius = Mathf.Sqrt(Mathf.Pow(position.x, 2) + Mathf.Pow(position.z, 2));
+            if (distance <= borderRadius)
             {
                 borderCheck = true;
             }
         }
+        else
+        {
+            float XMax = corePosition.x + (XDiameter / 2);
+            float XMin = corePosition.x - (XDiameter / 2);
+            float ZMax = corePosition.z + (ZDiameter / 2);
+            float ZMin = corePosition.z - (ZDiameter / 2);
+
+            if (position.x <= XMax && position.x >= XMin)
+            {
+                if (position.z <= ZMax && position.z >= ZMin)
+                {
+                    borderCheck = true;
+                }
+            }
+        }
     }
 
-    bool CanBePlaced()
+    bool CheckIfCanBePlaced()
     {
         if(colliderCheck && borderCheck && raycastCheck && slopeCheck)
         {
@@ -773,6 +358,5 @@ public class PoissonDiscAllignment : MonoBehaviour
         Vector3 toPos = new Vector3(centerPosition.x, centerPosition.y - maxDescent, centerPosition.z);
         Gizmos.DrawLine(fromPos, toPos);
     }
-
     #endregion
 }
