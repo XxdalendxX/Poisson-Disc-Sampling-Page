@@ -15,11 +15,7 @@ public class CustomInspector : Editor
         PoissonDiscAllignment pda = (PoissonDiscAllignment)target;
 
         EditorGUILayout.Space();
-        pda.isCore = GUILayout.Toggle(pda.isCore, "This is the Core Object");
-        if (!pda.isCore)
-        {
-            pda.centerPosition = EditorGUILayout.Vector3Field("Center Position", pda.centerPosition);
-        }
+        pda.centerPosition = EditorGUILayout.Vector3Field("Center Position", pda.centerPosition);
 
         EditorGUILayout.Space();
         pda.circleArea = GUILayout.Toggle(pda.circleArea, "Fill a circlular area");
@@ -61,7 +57,7 @@ public class CustomInspector : Editor
         {
             if (GUILayout.Button("Clear All Objects"))
             {
-                pda.ClearLists();
+                pda.ClearObjects();
             }
         }
     }

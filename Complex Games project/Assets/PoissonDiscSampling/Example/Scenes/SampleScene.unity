@@ -400,7 +400,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3596965035504663901, guid: e414f5e7a2e75994dbbed1ccb6ec5e92, type: 3}
       propertyPath: m_RootOrder
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3596965035504663901, guid: e414f5e7a2e75994dbbed1ccb6ec5e92, type: 3}
       propertyPath: m_LocalPosition.x
@@ -4160,7 +4160,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3596965035504663901, guid: e414f5e7a2e75994dbbed1ccb6ec5e92, type: 3}
       propertyPath: m_RootOrder
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3596965035504663901, guid: e414f5e7a2e75994dbbed1ccb6ec5e92, type: 3}
       propertyPath: m_LocalScale.x
@@ -4215,6 +4215,18 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6112251695914557613, guid: e414f5e7a2e75994dbbed1ccb6ec5e92, type: 3}
+      propertyPath: XDiameter
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 6112251695914557613, guid: e414f5e7a2e75994dbbed1ccb6ec5e92, type: 3}
+      propertyPath: ZDiameter
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 6112251695914557613, guid: e414f5e7a2e75994dbbed1ccb6ec5e92, type: 3}
+      propertyPath: circleArea
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6112251695914557613, guid: e414f5e7a2e75994dbbed1ccb6ec5e92, type: 3}
       propertyPath: borderRadius
       value: 50
       objectReference: {fileID: 0}
@@ -4223,8 +4235,16 @@ PrefabInstance:
       value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 6112251695914557613, guid: e414f5e7a2e75994dbbed1ccb6ec5e92, type: 3}
+      propertyPath: targetLayerName
+      value: Ground
+      objectReference: {fileID: 0}
+    - target: {fileID: 6112251695914557613, guid: e414f5e7a2e75994dbbed1ccb6ec5e92, type: 3}
       propertyPath: centerPosition.z
       value: 110
+      objectReference: {fileID: 0}
+    - target: {fileID: 6112251695914557613, guid: e414f5e7a2e75994dbbed1ccb6ec5e92, type: 3}
+      propertyPath: targetLayerNumber
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 6112251695914557613, guid: e414f5e7a2e75994dbbed1ccb6ec5e92, type: 3}
       propertyPath: maxObjectRadiusMultiplier

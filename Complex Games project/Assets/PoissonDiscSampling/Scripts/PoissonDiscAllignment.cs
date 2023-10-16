@@ -10,14 +10,14 @@ public class PoissonDiscAllignment : MonoBehaviour
 {
     #region MainVariables
     [SerializeField] GameObject desiredPrefab;
-    [SerializeField] int layerNumber = 0;
+    [SerializeField] string targetLayerName = "";
 
     [Header("Object radius")]
     [SerializeField] float objectRadius = 5f;
     [SerializeField, Tooltip("A multiplier put onto the object radius for it's maximum value"), Range(2, 6)] float maxObjectRadiusMultiplier = 5f;
 
     [Space]
-    [SerializeField] int attempts = 5;
+    [SerializeField] int totalAttempts = 5;
 
     [Header("Placement of objects")]
     [SerializeField] float maxAscent = 2f;
@@ -29,7 +29,6 @@ public class PoissonDiscAllignment : MonoBehaviour
 
     [Space]
     ///public variables used in the custom inspector
-    [HideInInspector]public bool isCore = true;
     [HideInInspector] public Vector3 centerPosition;
     [HideInInspector] public bool circleArea = true;
     [HideInInspector] public float borderRadius = 5f;
@@ -38,7 +37,7 @@ public class PoissonDiscAllignment : MonoBehaviour
 
 
     ///private variables
-    int layerMask;
+    LayerMask layerMask;
     GameObject epicenter;
     float pushOut;
 
@@ -52,63 +51,27 @@ public class PoissonDiscAllignment : MonoBehaviour
     #region ExecuteFunction
     public void Execute()
     {
-        layerMask = LayerMask.GetMask(LayerMask.LayerToName(layerNumber));
+        layerMask = LayerMask.GetMask(targetLayerName);
 
         pushOut = desiredPrefab.GetComponentInChildren<Transform>().position.y - desiredPrefab.transform.position.y;
-        
-        if(isCore)
-        {
-            epicenter = this.gameObject;
 
-            if (circleArea)
-            {
-                PerformCoreCircle();
-            }
-            else
-            {
-                PerformCoreSquare();
-            }
-        }
-        else
-        {
-            if (circleArea)
-            {
-                PerformCorelessCircle();
-            }
-            else
-            {
-                PerformCorelessSquare();
-            }
-        }
+        PerformPDS();
     }
     #endregion
 
     /// Clears all objects to save effeciency and trouble
-    #region ClearLists
-    public void ClearLists()
+    #region ClearObjects
+    public void ClearObjects()
     {
-        if (isCore)
+        int obj = allObjects.Count;
+        for (int i = 0; i < obj - 1; i++)
         {
-            int obj = allObjects.Count;
-            for (int i = 0; i < obj - 1; i++)
-            {
-                DestroyImmediate(allObjects[1]);
-                allObjects.RemoveAt(1);
-            }
-            allObjects.RemoveAt(0);
+            DestroyImmediate(allObjects[1]);
+            allObjects.RemoveAt(1);
         }
-        else
-        {
-            int obj = allObjects.Count;
-            for (int i = 0; i < obj - 1; i++)
-            {
-                DestroyImmediate(allObjects[1]);
-                allObjects.RemoveAt(1);
-            }
-            GameObject finalObject = allObjects[0];
-            allObjects.RemoveAt(0);
-            GameObject.DestroyImmediate(finalObject);
-        }
+        GameObject finalObject = allObjects[0];
+        allObjects.RemoveAt(0);
+        GameObject.DestroyImmediate(finalObject);
     }
     #endregion
 
@@ -138,7 +101,7 @@ public class PoissonDiscAllignment : MonoBehaviour
             Vector3 currentObjectPos = openList[0];
 
             int fails = 0;
-            while (iterations <= attempts)
+            while (iterations <= totalAttempts)
             {
                 //finds a location
                 Vector3 position = FindLocation(y, currentObjectPos);
@@ -160,7 +123,7 @@ public class PoissonDiscAllignment : MonoBehaviour
 
                 }
 
-                if (CheckToBePlaced() == true)
+                if (CanBePlaced() == true)
                 {
                     //places object in world and assigns collider radius
                     Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
@@ -216,7 +179,7 @@ public class PoissonDiscAllignment : MonoBehaviour
             Vector3 currentObjectPos = openList[0];
 
             int fails = 0;
-            while (iterations <= attempts)
+            while (iterations <= totalAttempts)
             {
                 //finds a location to perform checks within that meets position critera
                 Vector3 position = FindLocation(y, currentObjectPos);
@@ -237,7 +200,7 @@ public class PoissonDiscAllignment : MonoBehaviour
 
                 }
 
-                if (CheckToBePlaced())
+                if (CanBePlaced())
                 {
                     //places object in world and assigns collider radius
                     Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
@@ -279,6 +242,7 @@ public class PoissonDiscAllignment : MonoBehaviour
         //Creates and assigns starting object in open list and all objects list if there is an available slot
         bool gotFirstObject = false;
         int attempt = 0;
+
         while (!gotFirstObject)
         {
             Vector3 position;
@@ -289,8 +253,8 @@ public class PoissonDiscAllignment : MonoBehaviour
             position.x = centerPosition.x + Mathf.Cos(angle) * range;
             position.y = y;
             position.z = centerPosition.z + Mathf.Sin(angle) * range;
-            position.y = y;
-            position.z = Random.Range(centerPosition.z - (borderRadius), centerPosition.z + (ZDiameter / 2));
+            //position.y = y;
+            //position.z = Random.Range(centerPosition.z - (borderRadius), centerPosition.z + (ZDiameter / 2));
             
             RaycastHit hit;
             if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), LayerMask.GetMask("Ground")))
@@ -308,7 +272,7 @@ public class PoissonDiscAllignment : MonoBehaviour
 
             }
 
-            if (CheckToBePlaced())
+            if (CanBePlaced())
             {
                 //places object in world and assigns collider radius
                 Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
@@ -325,7 +289,7 @@ public class PoissonDiscAllignment : MonoBehaviour
                 attempt++;
             }
 
-            if(attempt > attempts)
+            if(attempt > totalAttempts)
             {
                 gotFirstObject = true;
                 Debug.Log("Failed to find an available location");
@@ -344,13 +308,13 @@ public class PoissonDiscAllignment : MonoBehaviour
             Vector3 currentObjectPos = openList[0];
 
             int fails = 0;
-            while (iterations <= attempts)
+            while (iterations <= totalAttempts)
             {
                 //finds a location to perform checks within that meets position critera
                 Vector3 position = FindLocation(y, currentObjectPos);
 
                 RaycastHit hit;
-                if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), LayerMask.GetMask("Ground")))
+                if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), layerMask))
                 {
                     raycastCheck = true;
 
@@ -365,7 +329,7 @@ public class PoissonDiscAllignment : MonoBehaviour
 
                 }
 
-                if (CheckToBePlaced() == true)
+                if (CanBePlaced() == true)
                 {
                     //places object in world and assigns collider radius
                     Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
@@ -409,6 +373,7 @@ public class PoissonDiscAllignment : MonoBehaviour
         //Creates and assigns starting object in open list and all objects list if there is an available slot
         bool gotFirstObject = false;
         int attempt = 0;
+
         while (!gotFirstObject)
         {
             Vector3 position;
@@ -438,7 +403,7 @@ public class PoissonDiscAllignment : MonoBehaviour
 
             }
 
-            if (CheckToBePlaced())
+            if (CanBePlaced())
             {
                 //places object in world and assigns collider radius
                 Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
@@ -455,7 +420,7 @@ public class PoissonDiscAllignment : MonoBehaviour
                 attempt++;
             }
 
-            if (attempt > attempts)
+            if (attempt > totalAttempts)
             {
                 gotFirstObject = true;
                 Debug.Log("Failed to find an available location");
@@ -474,7 +439,7 @@ public class PoissonDiscAllignment : MonoBehaviour
             Vector3 currentObjectPos = openList[0];
 
             int fails = 0;
-            while (iterations <= attempts)
+            while (iterations <= totalAttempts)
             {
                 //finds a location to perform checks within that meets position critera
                 Vector3 position = FindLocation(y, currentObjectPos);
@@ -495,7 +460,7 @@ public class PoissonDiscAllignment : MonoBehaviour
 
                 }
 
-                if (CheckToBePlaced() == true)
+                if (CanBePlaced() == true)
                 {
                     //places object in world and assigns collider radius
                     Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
@@ -526,11 +491,145 @@ public class PoissonDiscAllignment : MonoBehaviour
         }
         Debug.Log("PDS complete");
     }
+
+    void PerformPDS()
+    {
+        //creates core variables
+        float yPos = centerPosition.y;
+        List<Vector3> openList = new List<Vector3>();
+        HashSet<Vector3> closedList = new HashSet<Vector3>();
+
+        bool firstObject;
+
+        firstObject = PlaceFirstObject(yPos, openList);
+
+        if (!firstObject)
+            return;
+
+        int iterations = 0;
+        bool mustStop = false;
+        while (!mustStop)
+        {
+            if (openList.Count < 1)
+            {
+                //if open list is empty then break the loop
+                mustStop = true;
+                break;
+            }
+            Vector3 currentObjectPos = openList[0];
+
+            int fails = 0;
+            while (iterations <= totalAttempts)
+            {
+                //finds a location to perform checks within that meets position critera
+                Vector3 position = FindLocation(yPos, currentObjectPos);
+
+                RaycastHit hit;
+                if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), LayerMask.GetMask("Ground")))
+                {
+                    PerformChecks(hit);
+                }
+
+                if (CanBePlaced() == true)
+                {
+                    GameObject spawnedObject = PlaceObject(hit);
+                    openList.Add(spawnedObject.transform.position);
+                    allObjects.Add(spawnedObject);
+                    iterations = 0;
+                }
+                else
+                {
+                    //check failed and fail counter and iteration counter goes up
+                    fails++;
+                    iterations++;
+                }
+            }
+            iterations = 0;
+            fails = 0;
+            //removes transform from open list and transfers it to the closed list
+            openList.RemoveAt(0);
+            closedList.Add(currentObjectPos);
+        }
+        Debug.Log("PDS complete");
+    }
+
+    bool PlaceFirstObject(float yPos, List<Vector3> openList)
+    {
+        bool gotFirstObject = false;
+        int attempt = 0;
+
+        while (!gotFirstObject)
+        {
+            Vector3 position = GetFirstPosition(yPos);
+
+            RaycastHit hit;
+            if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), LayerMask.GetMask("Ground")))
+            {
+                raycastCheck = true;
+
+                if (!circleArea)
+                    CheckPosInQuadBorder(hit.point, centerPosition);
+                else
+                    CheckPosInCircleBorder(hit.point, centerPosition);
+
+                Collider[] colliders = Physics.OverlapSphere(hit.point, objectRadius, layerMask, QueryTriggerInteraction.Collide);
+                ColliderCheck(colliders.Length);
+
+                if (Vector3.Angle(hit.normal, Vector3.up) <= maxSlope)
+                    slopeCheck = true;
+
+            }
+
+            if (CanBePlaced())
+            {
+                GameObject spawnedObject = PlaceObject(hit);
+                openList.Add(spawnedObject.transform.position);
+                allObjects.Add(spawnedObject);
+                gotFirstObject = true;
+                break;
+            }
+            else
+                attempt++;
+
+            if (attempt > totalAttempts)
+            {
+                Debug.Log("Failed to find an available location");
+                break;
+            }
+        }
+        return gotFirstObject;
+    }
+
+    Vector3 GetFirstPosition(float yPos)
+    {
+        Vector3 position;
+        float min = 0;
+        float max = 0;
+        if (!circleArea)
+        {
+            min = centerPosition.x - (XDiameter / 2);
+            max = centerPosition.x + (ZDiameter / 2);
+        }
+        else
+        {
+            min = centerPosition.x - (borderRadius);
+            max = centerPosition.x + (borderRadius);
+        }
+
+        var range = Random.Range(min, max);
+        var angle = Random.Range(0, 360);
+        position.x = centerPosition.x + Mathf.Cos(angle) * range;
+        position.y = yPos;
+        position.z = centerPosition.z + Mathf.Sin(angle) * range;
+
+        return position;
+    }
+
     #endregion
 
     /// Miscilaneous Functions to help perform
     #region MiscelaneousFunctions
-  
+
     Vector3 FindLocation(float y, Vector3 objectTransform)
     {
         float min = objectRadius * 2;
@@ -562,6 +661,33 @@ public class PoissonDiscAllignment : MonoBehaviour
     public float GetObjectRadius()
     {
         return objectRadius;
+    }
+
+    void PerformChecks(RaycastHit hit)
+    {
+        raycastCheck = true;
+
+        if (circleArea)
+            CheckPosInCircleBorder(hit.point, centerPosition);
+        else
+            CheckPosInQuadBorder(hit.point, centerPosition);
+
+        Collider[] colliders = Physics.OverlapSphere(hit.point, objectRadius, layerMask, QueryTriggerInteraction.Collide);
+        ColliderCheck(colliders.Length);
+
+        if (Vector3.Angle(hit.normal, Vector3.up) <= maxSlope)
+            slopeCheck = true;
+    }
+
+    GameObject PlaceObject(RaycastHit hit)
+    {
+        //places object in world and assigns collider radius
+        Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
+        Vector3 spawnPosition = hit.point;
+        GameObject spawnedObject = Instantiate(desiredPrefab, spawnPosition, rotation);
+        SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
+        sCollider.radius = objectRadius;
+        return spawnedObject;
     }
 
     #endregion
@@ -601,7 +727,7 @@ public class PoissonDiscAllignment : MonoBehaviour
         }
     }
 
-    bool CheckToBePlaced()
+    bool CanBePlaced()
     {
         if(colliderCheck && borderCheck && raycastCheck && slopeCheck)
         {
@@ -627,59 +753,25 @@ public class PoissonDiscAllignment : MonoBehaviour
         Vector3 corePos = gameObject.transform.position;
         if (!circleArea)
         {
-            if(isCore)
-            {
-                float xDist = (XDiameter / 2);
-                float zDist = (ZDiameter / 2);
-                Vector3 pointA = new Vector3(corePos.x - xDist, corePos.y, corePos.z - zDist);
-                Vector3 pointB = new Vector3(corePos.x - xDist, corePos.y, corePos.z + zDist);
-                Vector3 pointC = new Vector3(corePos.x + xDist, corePos.y, corePos.z + zDist);
-                Vector3 pointD = new Vector3(corePos.x + xDist, corePos.y, corePos.z - zDist);
-                Gizmos.DrawLine(pointA, pointB);
-                Gizmos.DrawLine(pointB, pointC);
-                Gizmos.DrawLine(pointC, pointD);
-                Gizmos.DrawLine(pointD, pointA);
-            }
-            else
-            {
-                float xDist = (XDiameter / 2);
-                float zDist = (ZDiameter / 2);
-                Vector3 pointA = new Vector3(centerPosition.x - xDist, centerPosition.y, centerPosition.z - zDist);
-                Vector3 pointB = new Vector3(centerPosition.x - xDist, centerPosition.y, centerPosition.z + zDist);
-                Vector3 pointC = new Vector3(centerPosition.x + xDist, centerPosition.y, centerPosition.z + zDist);
-                Vector3 pointD = new Vector3(centerPosition.x + xDist, centerPosition.y, centerPosition.z - zDist);
-                Gizmos.DrawLine(pointA, pointB);
-                Gizmos.DrawLine(pointB, pointC);
-                Gizmos.DrawLine(pointC, pointD);
-                Gizmos.DrawLine(pointD, pointA);
-            }
-        }
-
-        if(circleArea)
-        {
-            if(isCore)
-            {
-                Gizmos.DrawWireSphere(gameObject.transform.position, borderRadius);
-            }
-            else
-            {
-                Gizmos.DrawWireSphere(centerPosition, borderRadius);
-            }
-        }
-
-        if(isCore)
-        {
-            
-            Vector3 fromPos = new Vector3(corePos.x, corePos.y + maxAscent, corePos.z);
-            Vector3 toPos = new Vector3(corePos.x, corePos.y - maxDescent, corePos.z);
-            Gizmos.DrawLine(fromPos, toPos);
+            float xDist = (XDiameter / 2);
+            float zDist = (ZDiameter / 2);
+            Vector3 pointA = new Vector3(centerPosition.x - xDist, centerPosition.y, centerPosition.z - zDist);
+            Vector3 pointB = new Vector3(centerPosition.x - xDist, centerPosition.y, centerPosition.z + zDist);
+            Vector3 pointC = new Vector3(centerPosition.x + xDist, centerPosition.y, centerPosition.z + zDist);
+            Vector3 pointD = new Vector3(centerPosition.x + xDist, centerPosition.y, centerPosition.z - zDist);
+            Gizmos.DrawLine(pointA, pointB);
+            Gizmos.DrawLine(pointB, pointC);
+            Gizmos.DrawLine(pointC, pointD);
+            Gizmos.DrawLine(pointD, pointA);
         }
         else
         {
-            Vector3 fromPos = new Vector3(centerPosition.x, centerPosition.y + maxAscent, centerPosition.z);
-            Vector3 toPos = new Vector3(centerPosition.x, centerPosition.y - maxDescent, centerPosition.z);
-            Gizmos.DrawLine(fromPos, toPos);
+            Gizmos.DrawWireSphere(centerPosition, borderRadius);
         }
+
+        Vector3 fromPos = new Vector3(centerPosition.x, centerPosition.y + maxAscent, centerPosition.z);
+        Vector3 toPos = new Vector3(centerPosition.x, centerPosition.y - maxDescent, centerPosition.z);
+        Gizmos.DrawLine(fromPos, toPos);
     }
 
     #endregion
