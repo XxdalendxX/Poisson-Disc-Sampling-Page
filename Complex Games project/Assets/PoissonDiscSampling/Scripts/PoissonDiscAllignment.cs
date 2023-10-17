@@ -89,7 +89,7 @@ public class PoissonDiscAllignment : MonoBehaviour
 
         bool firstObject;
 
-        firstObject = PlaceFirstObject(yPos, openList);
+        firstObject = PlaceFirstObject(openList);
 
         if (!firstObject)
             return;
@@ -110,7 +110,7 @@ public class PoissonDiscAllignment : MonoBehaviour
             while (iterations <= totalAttempts)
             {
                 //finds a location to perform checks within that meets position critera
-                Vector3 position = FindLocation(yPos, currentObjectPos);
+                Vector3 position = FindLocation(currentObjectPos);
 
                 RaycastHit hit;
                 if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), groundLayerMask))
@@ -141,25 +141,20 @@ public class PoissonDiscAllignment : MonoBehaviour
         Debug.Log("PDS complete");
     }
 
-    bool PlaceFirstObject(float yPos, List<Vector3> openList)
+    bool PlaceFirstObject(List<Vector3> openList)
     {
         bool gotFirstObject = false;
         int attempt = 0;
 
         while (!gotFirstObject)
         {
-            Vector3 position = FindFirstPosition(yPos);
-
-            Debug.Log(position);
+            Vector3 position = FindFirstPosition();
 
             RaycastHit hit;
-            //check raycast as problem exists here
             if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), groundLayerMask))
             {
                 PerformChecks(hit);
             }
-
-            Debug.Log(hit);
 
             if (CheckIfCanBePlaced())
             {
@@ -197,39 +192,24 @@ public class PoissonDiscAllignment : MonoBehaviour
         return spawnedObject;
     }
 
-    Vector3 FindFirstPosition(float yPos)
+    Vector3 FindFirstPosition()
     {
         Vector3 position;
-        float min = 0;
-        float max = 0;
-        if (!circleArea)
-        {
-            min = centerPosition.x - (XDiameter / 2);
-            max = centerPosition.x + (ZDiameter / 2);
-        }
-        else
-        {
-            min = centerPosition.x - (borderRadius);
-            max = centerPosition.x + (borderRadius);
-        }
-
-        var range = Random.Range(min, max);
-        var angle = Random.Range(0, 360);
-        position.x = centerPosition.x + Mathf.Cos(angle) * range;
-        position.y = yPos;
-        position.z = centerPosition.z + Mathf.Sin(angle) * range;
+        position.x = Random.Range(centerPosition.x - (XDiameter / 2), centerPosition.x + (XDiameter / 2));
+        position.y = centerPosition.y;
+        position.z = Random.Range(centerPosition.z - (ZDiameter / 2), centerPosition.z + (ZDiameter / 2));
 
         return position;
     }
-    Vector3 FindLocation(float y, Vector3 objectTransform)
+    Vector3 FindLocation(Vector3 objectTransform)
     {
         float min = objectRadius * 2;
         float max = objectRadius * maxObjectRadiusMultiplier;
-        var range = Random.Range(min, max);
-        var angle = Random.Range(0, 360);
-        var x = objectTransform.x + Mathf.Cos(angle) * range;
-        var z = objectTransform.z + Mathf.Sin(angle) * range;
-        return new Vector3(x, y, z);
+        float range = Random.Range(min, max);
+        float angle = Random.Range(0, 360) * Mathf.PI / 180;
+        float x = objectTransform.x + Mathf.Cos(angle) * range;
+        float z = objectTransform.z + Mathf.Sin(angle) * range;
+        return new Vector3(x, objectTransform.y, z);
     }
 
     #endregion
