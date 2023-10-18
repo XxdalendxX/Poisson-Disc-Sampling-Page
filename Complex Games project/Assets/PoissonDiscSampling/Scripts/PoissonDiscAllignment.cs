@@ -1,21 +1,39 @@
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
-using UnityEngine.UIElements;
+
+[System.Serializable]
+public class PrefabObject
+{
+    public GameObject desiredPrefab;
+    public float objectRadius = 5f;
+
+    [HideInInspector]
+    public int count;
+}
+
+public class SampleData
+{
+    public Vector3 position;
+    public float objectRadius = 5f;
+
+    public SampleData(Vector3 pos, float objRadius)
+    {
+        position = pos;
+        objectRadius = objRadius;
+    }
+}
 
 public class PoissonDiscAllignment : MonoBehaviour
 {
     #region MainVariables
-    [SerializeField] GameObject desiredPrefab;
+    [SerializeField] PrefabObject[] prefabs;
+
     [SerializeField] Transform desiredInstantiateLocation;
     [SerializeField] string targetLayerName = "";
     [SerializeField] string checkAgainstLayerName = "";
 
-    [Header("Object radius")]
-    [SerializeField] float objectRadius = 5f;
+    [Space]
     [SerializeField, Tooltip("A multiplier put onto the object radius for it's maximum value"), Range(2, 6)] float maxObjectRadiusMultiplier = 5f;
 
     [Space]
@@ -41,7 +59,6 @@ public class PoissonDiscAllignment : MonoBehaviour
     ///private variables
     LayerMask groundLayerMask;
     LayerMask targetLayerMask;
-    float pushOut;
 
     bool colliderCheck = false;
     bool borderCheck = false;
@@ -55,8 +72,6 @@ public class PoissonDiscAllignment : MonoBehaviour
     {
         groundLayerMask = LayerMask.GetMask(targetLayerName);
         targetLayerMask = LayerMask.GetMask(checkAgainstLayerName);
-
-        pushOut = desiredPrefab.GetComponentInChildren<Transform>().position.y - desiredPrefab.transform.position.y;
 
         PerformPDS();
     }
@@ -83,9 +98,10 @@ public class PoissonDiscAllignment : MonoBehaviour
     void PerformPDS()
     {
         //creates core variables
-        float yPos = centerPosition.y;
-        List<Vector3> openList = new List<Vector3>();
-        HashSet<Vector3> closedList = new HashSet<Vector3>();
+        List<SampleData> openList = new List<SampleData>();
+        HashSet<SampleData> closedList = new HashSet<SampleData>();
+
+        ResetPrefabCounts();
 
         bool firstObject;
 
@@ -104,24 +120,30 @@ public class PoissonDiscAllignment : MonoBehaviour
                 mustStop = true;
                 break;
             }
-            Vector3 currentObjectPos = openList[0];
+            SampleData currentObjectData = openList[0];
 
             int fails = 0;
             while (iterations <= totalAttempts)
             {
+                PrefabObject prefab = GetPrefabObject();
+
                 //finds a location to perform checks within that meets position critera
-                Vector3 position = FindLocation(currentObjectPos);
+                Vector3 position = FindLocation(currentObjectData, prefab.objectRadius);
+
+
 
                 RaycastHit hit;
                 if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), groundLayerMask))
                 {
-                    PerformChecks(hit);
+
+                    PerformChecks(hit, prefab.objectRadius);
                 }
 
                 if (CheckIfCanBePlaced() == true)
                 {
-                    GameObject spawnedObject = PlaceObject(hit);
-                    openList.Add(spawnedObject.transform.position);
+                    GameObject spawnedObject = PlaceObject(hit, prefab);
+                    SampleData newSampleObject = new SampleData(position, prefab.objectRadius);
+                    openList.Add(newSampleObject);
                     allObjects.Add(spawnedObject);
                     iterations = 0;
                 }
@@ -136,12 +158,12 @@ public class PoissonDiscAllignment : MonoBehaviour
             fails = 0;
             //removes transform from open list and transfers it to the closed list
             openList.RemoveAt(0);
-            closedList.Add(currentObjectPos);
+            closedList.Add(currentObjectData);
         }
         Debug.Log("PDS complete");
     }
 
-    bool PlaceFirstObject(List<Vector3> openList)
+    bool PlaceFirstObject(List<SampleData> openList)
     {
         bool gotFirstObject = false;
         int attempt = 0;
@@ -150,16 +172,19 @@ public class PoissonDiscAllignment : MonoBehaviour
         {
             Vector3 position = FindFirstPosition();
 
+            PrefabObject prefab = GetPrefabObject();
+
             RaycastHit hit;
             if (Physics.Raycast(GetMaxAscentPos(position), Vector3.down, out hit, GetRayCheckDistance(), groundLayerMask))
             {
-                PerformChecks(hit);
+                PerformChecks(hit, prefab.objectRadius);
             }
 
             if (CheckIfCanBePlaced())
             {
-                GameObject spawnedObject = PlaceObject(hit);
-                openList.Add(spawnedObject.transform.position);
+                GameObject spawnedObject = PlaceObject(hit, prefab);
+                SampleData newSampleData = new SampleData(position, prefab.objectRadius);
+                openList.Add(newSampleData);
                 allObjects.Add(spawnedObject);
                 gotFirstObject = true;
                 break;
@@ -175,20 +200,22 @@ public class PoissonDiscAllignment : MonoBehaviour
         }
         return gotFirstObject;
     }
-    GameObject PlaceObject(RaycastHit hit)
+    GameObject PlaceObject(RaycastHit hit, PrefabObject prefabObject)
     {
-        //places object in world and assigns collider radius
+        //places referenceObject in world and assigns collider radius
         Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
         Vector3 spawnPosition = hit.point;
         GameObject spawnedObject;
 
         if (desiredInstantiateLocation != null)
-            spawnedObject = Instantiate(desiredPrefab, spawnPosition, rotation, desiredInstantiateLocation);
+            spawnedObject = Instantiate(prefabObject.desiredPrefab, spawnPosition, rotation, desiredInstantiateLocation);
         else
-            spawnedObject = Instantiate(desiredPrefab, spawnPosition, rotation);
+            spawnedObject = Instantiate(prefabObject.desiredPrefab, spawnPosition, rotation);
 
+        spawnedObject.name = prefabObject.desiredPrefab.name + "_" + prefabObject.count;
+        prefabObject.count++;
         SphereCollider sCollider = spawnedObject.GetComponent<SphereCollider>();
-        sCollider.radius = objectRadius;
+        sCollider.radius = prefabObject.objectRadius;
         return spawnedObject;
     }
 
@@ -201,21 +228,26 @@ public class PoissonDiscAllignment : MonoBehaviour
 
         return position;
     }
-    Vector3 FindLocation(Vector3 objectTransform)
+    Vector3 FindLocation(SampleData referenceObject, float objectRadius)
     {
-        float min = objectRadius * 2;
-        float max = objectRadius * maxObjectRadiusMultiplier;
+        float min = referenceObject.objectRadius + objectRadius;
+        float max = referenceObject.objectRadius + (objectRadius * maxObjectRadiusMultiplier);
         float range = Random.Range(min, max);
         float angle = Random.Range(0, 360) * Mathf.PI / 180;
-        float x = objectTransform.x + Mathf.Cos(angle) * range;
-        float z = objectTransform.z + Mathf.Sin(angle) * range;
-        return new Vector3(x, objectTransform.y, z);
+        float x = referenceObject.position.x + Mathf.Cos(angle) * range;
+        float z = referenceObject.position.z + Mathf.Sin(angle) * range;
+        return new Vector3(x, referenceObject.position.y, z);
     }
 
     #endregion
 
     /// Miscilaneous Functions to help perform
     #region MiscelaneousFunctions
+    PrefabObject GetPrefabObject()
+    {
+        return prefabs[Random.Range(0, prefabs.Length)];
+    }
+
     Vector3 GetMaxAscentPos(Vector3 pos)
     {
         Vector3 fromPos = new Vector3(pos.x, pos.y + maxAscent, pos.z);
@@ -233,21 +265,21 @@ public class PoissonDiscAllignment : MonoBehaviour
         return allObjects.Count;
     }
 
-    public float GetObjectRadius()
+    void ResetPrefabCounts()
     {
-        return objectRadius;
+        foreach (PrefabObject prefab in prefabs)
+        {
+            prefab.count = 1;
+        }
     }
     #endregion
 
     #region Checks
-    void PerformChecks(RaycastHit hit)
+    void PerformChecks(RaycastHit hit, float objectRadius)
     {
         raycastCheck = true;
 
-        if (circleArea)
-            CheckPositionInBorder(hit.point, centerPosition);
-        else
-            CheckPositionInBorder(hit.point, centerPosition);
+        CheckPositionInBorder(hit.point, centerPosition);
 
         Collider[] colliders = Physics.OverlapSphere(hit.point, objectRadius, targetLayerMask, QueryTriggerInteraction.Collide);
         ColliderCheck(colliders.Length);
@@ -269,7 +301,6 @@ public class PoissonDiscAllignment : MonoBehaviour
         if(circleArea)
         {
             float distance = Mathf.Sqrt(Mathf.Pow(position.x - corePosition.x, 2) + Mathf.Pow(position.z - corePosition.z, 2));
-            float radius = Mathf.Sqrt(Mathf.Pow(position.x, 2) + Mathf.Pow(position.z, 2));
             if (distance <= borderRadius)
             {
                 borderCheck = true;

@@ -31,10 +31,6 @@ public class CustomInspector : Editor
             pda.ZDiameter = EditorGUILayout.FloatField(pda.ZDiameter);
         }
 
-        SphereCollider collider = pda.GetComponent<SphereCollider>();
-        if (collider != null)
-            collider.radius = pda.GetObjectRadius();
-
         if(!pda.circleArea && pda.ZDiameter != 0 && pda.XDiameter != 0 && pda.GetObjectCount() < 1)
         {
             
