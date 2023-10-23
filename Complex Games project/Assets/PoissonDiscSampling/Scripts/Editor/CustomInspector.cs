@@ -1,59 +1,60 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
-using UnityEditor.ShortcutManagement;
 
-[CustomEditor(typeof(PoissonDiscAllignment))]
-public class CustomInspector : Editor
+namespace PoissonDiscSampling
 {
-    public override void OnInspectorGUI()
+
+    [CustomEditor(typeof(PoissonDiscAllignment))]
+    public class CustomInspector : Editor
     {
-        DrawDefaultInspector();
-
-        ///Poisson Disc Allignment
-        PoissonDiscAllignment pda = (PoissonDiscAllignment)target;
-
-        EditorGUILayout.Space();
-        pda.centerPosition = EditorGUILayout.Vector3Field("Center Position", pda.centerPosition);
-
-        EditorGUILayout.Space();
-        pda.circleArea = GUILayout.Toggle(pda.circleArea, "Fill a circlular area");
-        if (pda.circleArea)
+        public override void OnInspectorGUI()
         {
-            pda.borderRadius = EditorGUILayout.Slider(pda.borderRadius, 1.0f, 1000.0f);
-        }
-        else
-        {
-            EditorGUILayout.PrefixLabel("X Diameter");
-            pda.XDiameter = EditorGUILayout.FloatField(pda.XDiameter);
-            EditorGUILayout.PrefixLabel("Z Diameter");
-            pda.ZDiameter = EditorGUILayout.FloatField(pda.ZDiameter);
-        }
+            DrawDefaultInspector();
 
-        if(!pda.circleArea && pda.ZDiameter != 0 && pda.XDiameter != 0 && !pda.placedObjects)
-        {
-            
-            if(GUILayout.Button("Perform Poisson Disc Allignment"))
+            ///Poisson Disc Allignment
+            PoissonDiscAllignment pda = (PoissonDiscAllignment)target;
+
+            EditorGUILayout.Space();
+            pda.centerPosition = EditorGUILayout.Vector3Field("Center Position", pda.centerPosition);
+
+            EditorGUILayout.Space();
+            pda.circleArea = GUILayout.Toggle(pda.circleArea, "Fill a circlular area");
+            if (pda.circleArea)
             {
-                pda.Execute();
+                pda.borderRadius = EditorGUILayout.Slider(pda.borderRadius, 1.0f, 1000.0f);
             }
-        }
-        else if (pda.circleArea && !pda.placedObjects)
-        {
-            if (GUILayout.Button("Perform Poisson Disc Allignment"))
+            else
             {
-                pda.Execute();
+                EditorGUILayout.PrefixLabel("X Diameter");
+                pda.XDiameter = EditorGUILayout.FloatField(pda.XDiameter);
+                EditorGUILayout.PrefixLabel("Z Diameter");
+                pda.ZDiameter = EditorGUILayout.FloatField(pda.ZDiameter);
             }
-        }
 
-        EditorGUILayout.Space();
-
-        if (pda.placedObjects)
-        {
-            if (GUILayout.Button("Clear All Objects"))
+            if (!pda.circleArea && pda.ZDiameter != 0 && pda.XDiameter != 0 && !pda.placedObjects)
             {
-                pda.ClearObjects();
+
+                if (GUILayout.Button("Perform Poisson Disc Allignment"))
+                {
+                    pda.Execute();
+                }
+            }
+            else if (pda.circleArea && !pda.placedObjects)
+            {
+                if (GUILayout.Button("Perform Poisson Disc Allignment"))
+                {
+                    pda.Execute();
+                }
+            }
+
+            EditorGUILayout.Space();
+
+            if (pda.placedObjects)
+            {
+                if (GUILayout.Button("Clear All Objects"))
+                {
+                    pda.ClearObjects();
+                }
             }
         }
     }
