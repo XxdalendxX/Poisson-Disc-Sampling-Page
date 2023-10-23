@@ -11,7 +11,6 @@ public class PrefabObject
     [HideInInspector]
     public int count;
 }
-
 public class SampleData
 {
     public Vector3 position;
@@ -45,18 +44,18 @@ public class PoissonDiscAllignment : MonoBehaviour
     [SerializeField] float maxSlope = 0f;
 
     [Space]
-    [SerializeField] List<GameObject> allObjects = new List<GameObject>();
-
-    [Space]
     ///public variables used in the custom inspector
     [HideInInspector] public Vector3 centerPosition;
     [HideInInspector] public bool circleArea = true;
     [HideInInspector] public float borderRadius = 5f;
     [HideInInspector] public float XDiameter = 0.0f;
     [HideInInspector] public float ZDiameter = 0.0f;
+    [HideInInspector] public bool placedObjects = false;
 
 
     ///private variables
+    Transform _parentGameObject;
+    
     LayerMask groundLayerMask;
     LayerMask targetLayerMask;
 
@@ -73,6 +72,16 @@ public class PoissonDiscAllignment : MonoBehaviour
         groundLayerMask = LayerMask.GetMask(targetLayerName);
         targetLayerMask = LayerMask.GetMask(checkAgainstLayerName);
 
+        if (desiredInstantiateLocation != null)
+        {
+            _parentGameObject = new GameObject().transform;
+            _parentGameObject.transform.parent = desiredInstantiateLocation; 
+        }
+        else
+            _parentGameObject = new GameObject().transform;
+
+        _parentGameObject.name = "PoissonDiscSamplingObject";
+
         PerformPDS();
     }
     #endregion
@@ -81,16 +90,10 @@ public class PoissonDiscAllignment : MonoBehaviour
     #region ClearObjects
     public void ClearObjects()
     {
-        int obj = allObjects.Count;
-        for (int i = 0; i < obj - 1; i++)
-        {
-            DestroyImmediate(allObjects[1]);
-            allObjects.RemoveAt(1);
-        }
-        GameObject finalObject = allObjects[0];
-        allObjects.RemoveAt(0);
-        GameObject.DestroyImmediate(finalObject);
+        DestroyImmediate(_parentGameObject.gameObject);
+        placedObjects = false;
     }
+
     #endregion
 
     /// Main Functions that performs the algorithm
@@ -144,7 +147,6 @@ public class PoissonDiscAllignment : MonoBehaviour
                     GameObject spawnedObject = PlaceObject(hit, prefab);
                     SampleData newSampleObject = new SampleData(position, prefab.objectRadius);
                     openList.Add(newSampleObject);
-                    allObjects.Add(spawnedObject);
                     iterations = 0;
                 }
                 else
@@ -160,6 +162,8 @@ public class PoissonDiscAllignment : MonoBehaviour
             openList.RemoveAt(0);
             closedList.Add(currentObjectData);
         }
+        placedObjects = true;
+
         Debug.Log("PDS complete");
     }
 
@@ -185,7 +189,6 @@ public class PoissonDiscAllignment : MonoBehaviour
                 GameObject spawnedObject = PlaceObject(hit, prefab);
                 SampleData newSampleData = new SampleData(position, prefab.objectRadius);
                 openList.Add(newSampleData);
-                allObjects.Add(spawnedObject);
                 gotFirstObject = true;
                 break;
             }
@@ -207,10 +210,7 @@ public class PoissonDiscAllignment : MonoBehaviour
         Vector3 spawnPosition = hit.point;
         GameObject spawnedObject;
 
-        if (desiredInstantiateLocation != null)
-            spawnedObject = Instantiate(prefabObject.desiredPrefab, spawnPosition, rotation, desiredInstantiateLocation);
-        else
-            spawnedObject = Instantiate(prefabObject.desiredPrefab, spawnPosition, rotation);
+        spawnedObject = Instantiate(prefabObject.desiredPrefab, spawnPosition, rotation, _parentGameObject);
 
         spawnedObject.name = prefabObject.desiredPrefab.name + "_" + prefabObject.count;
         prefabObject.count++;
@@ -258,11 +258,6 @@ public class PoissonDiscAllignment : MonoBehaviour
     {
         float distance = maxAscent + maxDescent;
         return distance;
-    }
-
-    public int GetObjectCount()
-    {
-        return allObjects.Count;
     }
 
     void ResetPrefabCounts()

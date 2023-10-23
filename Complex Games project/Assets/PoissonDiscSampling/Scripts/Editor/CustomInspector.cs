@@ -31,7 +31,7 @@ public class CustomInspector : Editor
             pda.ZDiameter = EditorGUILayout.FloatField(pda.ZDiameter);
         }
 
-        if(!pda.circleArea && pda.ZDiameter != 0 && pda.XDiameter != 0 && pda.GetObjectCount() < 1)
+        if(!pda.circleArea && pda.ZDiameter != 0 && pda.XDiameter != 0 && !pda.placedObjects)
         {
             
             if(GUILayout.Button("Perform Poisson Disc Allignment"))
@@ -39,7 +39,7 @@ public class CustomInspector : Editor
                 pda.Execute();
             }
         }
-        else if (pda.circleArea && pda.GetObjectCount() < 1)
+        else if (pda.circleArea && !pda.placedObjects)
         {
             if (GUILayout.Button("Perform Poisson Disc Allignment"))
             {
@@ -49,7 +49,7 @@ public class CustomInspector : Editor
 
         EditorGUILayout.Space();
 
-        if (pda.GetObjectCount() > 0)
+        if (pda.placedObjects)
         {
             if (GUILayout.Button("Clear All Objects"))
             {
