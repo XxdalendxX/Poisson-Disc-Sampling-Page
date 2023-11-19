@@ -1,7 +1,5 @@
-# Turn_Based_Networking_Csharp
-This project contains the workings of a networking system specific to turn based games
+# Poisson Disc Sampling
+This repository contains the workings of a procedural generation tool for Unity
 
 # What do you need to run this system?
-You need the Mirror unity asset/package to be able to run this.
-
-The Mirror asset store link: https://assetstore.unity.com/packages/tools/network/mirror-129321
+You need Unity installed to be able to make use of the Unity package.
